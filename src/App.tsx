@@ -47,7 +47,7 @@ export function App() {
           onOpen={() => setIsOpen(true)}
         />
       ) : (
-        <main className="relative z-10 w-full animate-fadeIn min-h-screen flex items-center justify-center">
+        <main className="relative z-10 w-full animate-fadeIn min-h-screen flex flex-col items-center justify-start sm:justify-center">
           <DiaryBook
             customData={customData}
             onOpenLetter={() => setIsLetterOpen(true)}
