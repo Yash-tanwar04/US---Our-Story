@@ -10,6 +10,7 @@ import { AutoplayFilmFrame } from './AutoplayFilmFrame';
 import { UnfilteredFilmModal } from './UnfilteredFilmModal';
 import { RealVoiceNotePlayer } from './RealVoiceNotePlayer';
 import { VoiceNoteModal } from './VoiceNoteModal';
+import { GrandWishingVideoReveal } from './GrandWishingVideoReveal';
 import { triggerReaction } from '../utils/reactions';
 import type { CustomDiaryData } from './CustomizerModal';
 
@@ -2709,31 +2710,35 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
 // PAGE 44
             <Page key={44} pageNumber={44} totalPages={totalPages} warm>
 
-              <div className="h-full flex flex-col justify-between items-center text-center py-2">
-                <DiaryHeader date="Forever and Always" location="Our Journey" mood="Just the beginning" />
-                <div className="my-auto space-y-2 max-w-[270px]">
-                  <div className="w-12 h-12 rounded-full border-2 border-rose-deep/40 flex items-center justify-center mx-auto text-xl shadow-xs">
-                    💌
-                  </div>
-                  <div className="font-handwriting text-2xl font-bold text-rose-deep">
+              <div className="space-y-2 text-center py-1">
+                <DiaryHeader date="Forever and Always" location="Our Journey" mood="The Grand Finale ♡" />
+                <span className="font-handwriting text-[12.5px] uppercase text-rose-deep font-bold tracking-widest">
+                  THE FINAL GIFT • CHAPTER FINALE
+                </span>
+
+                {/* The Grand Wishing Video Reveal with Build-up & Promise Countdown */}
+                <GrandWishingVideoReveal />
+
+                <div className="pt-2 border-t border-amber-900/15 space-y-1.5 max-w-[290px] mx-auto">
+                  <div className="font-handwriting text-xl sm:text-2xl font-bold text-rose-deep leading-tight">
                     The End of This Diary.
                   </div>
-                  <div className="font-handwriting text-xl text-[#3d2721] font-semibold">
+                  <div className="font-handwriting text-base sm:text-lg text-[#3d2721] font-semibold">
                     The Beginning of Our Forever.
                   </div>
-                  <P className="italic text-sm text-[#4a2e25]">
+                  <P className="italic text-xs sm:text-sm text-[#4a2e25] leading-snug">
                     "I love you, Tanisha Jha. More than yesterday, and less than tomorrow."
                   </P>
-                  <VintageStamp text="YASH ♡ TANNU • TO INFINITY" rotation={-2} />
-                </div>
-                <div className="space-y-1 w-full max-w-[250px]">
+                  <div className="my-1">
+                    <VintageStamp text="YASH ♡ TANNU • TO INFINITY" rotation={-2} />
+                  </div>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCloseDiary();
                     }}
-                    className="w-full py-1.5 px-3 rounded-full bg-amber-900/10 hover:bg-amber-900/20 active:scale-95 text-[#3d2721] font-handwriting text-sm font-bold border border-amber-900/20 shadow-2xs cursor-pointer transition-all"
+                    className="w-full py-1.5 px-3 rounded-full bg-amber-900/10 hover:bg-amber-900/20 active:scale-95 text-[#3d2721] font-handwriting text-xs sm:text-sm font-bold border border-amber-900/20 shadow-2xs cursor-pointer transition-all mt-1"
                   >
                     Close Diary ♡ (Keep in my heart)
                   </button>
