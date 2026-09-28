@@ -329,9 +329,17 @@ const FlipPolaroid: React.FC<FlipPolaroidProps> = ({
                 ↺ flip
               </div>
             </div>
-            <div className="pt-1 text-center font-handwriting text-[#241713] leading-tight">
-              {caption && <p className="text-[13px] sm:text-[14px] font-semibold truncate">{caption}</p>}
-              {date && <p className="text-[10px] text-amber-900/70 italic mt-0.5">{date}</p>}
+            <div className="pt-1.5 pb-0.5 text-center font-handwriting text-[#241713] leading-tight px-1">
+              {caption && (
+                <p className="text-[12px] sm:text-[13px] font-semibold leading-snug break-words">
+                  {caption}
+                </p>
+              )}
+              {date && (
+                <p className="text-[9.5px] sm:text-[10px] text-amber-900/70 italic mt-0.5 font-sans font-medium">
+                  {date}
+                </p>
+              )}
             </div>
           </>
         ) : (
@@ -340,7 +348,7 @@ const FlipPolaroid: React.FC<FlipPolaroidProps> = ({
               <span>PHOTO BACK</span>
               <span className="text-rose-600">↺ back</span>
             </div>
-            <p className="font-handwriting text-[13px] sm:text-[14px] italic leading-tight text-[#8b263e]">
+            <p className="font-handwriting text-[12px] sm:text-[13px] italic leading-snug text-[#8b263e] break-words my-auto">
               "{backNote}"
             </p>
             <div className="text-[11px] font-handwriting text-right text-amber-900/70">
@@ -1002,20 +1010,29 @@ const CHAPTER_DIRECTORY = [
 const mobilePageVariants = {
   initial: (dir: 'next' | 'prev') => ({
     opacity: 0,
-    x: dir === 'next' ? 40 : -40,
-    rotateY: dir === 'next' ? -6 : 6,
+    x: dir === 'next' ? 45 : -45,
+    rotateY: dir === 'next' ? 14 : -14,
+    scale: 0.98,
   }),
   animate: {
     opacity: 1,
     x: 0,
     rotateY: 0,
-    transition: { duration: 0.22, ease: [0.25, 1, 0.5, 1] as [number, number, number, number] },
+    scale: 1,
+    transition: {
+      duration: 0.32,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
   },
   exit: (dir: 'next' | 'prev') => ({
     opacity: 0,
-    x: dir === 'next' ? -40 : 40,
-    rotateY: dir === 'next' ? 6 : -6,
-    transition: { duration: 0.18, ease: [0.25, 1, 0.5, 1] as [number, number, number, number] },
+    x: dir === 'next' ? -45 : 45,
+    rotateY: dir === 'next' ? -14 : 14,
+    scale: 0.98,
+    transition: {
+      duration: 0.25,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
   }),
 };
 
@@ -1209,7 +1226,7 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/yash/yash_before.jpg"
-                    caption="me before you"
+                    caption="green sweatshirt & guarded heart"
                     date="2024 hostel era"
                     backNote="Look at my face here. So serious, so guarded. I had no idea a girl named Tanisha was about to turn my whole world upside down in 2025."
                     rotation={2}
@@ -1240,7 +1257,7 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-start gap-2">
                   <FlipPolaroid
                     src="/assets/yash/yash2.jpg"
-                    caption="the guarded boy"
+                    caption="leather jacket & guarded walls"
                     date="pre-Tannu days"
                     backNote="I used to think being emotionless was a strength. You proved to me that loving with your whole heart is the bravest thing in the world."
                     rotation={-2}
@@ -1286,8 +1303,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-center my-1">
                   <FlipPolaroid
                     src="/assets/yash/yash3.jpg"
-                    caption="looking for something real"
-                    backNote="I was wandering through crowds wondering if anyone would ever truly see me. Then you came and looked right into my soul."
+                    caption="golden hour under the trees"
+                    date="pre-2025"
+                    backNote="Standing under the trees wondering where my life was going. I had no idea my soulmate was waiting for me in 2025."
                     rotation={1}
                     tapeColor="rose"
                     size="sm"
@@ -1318,15 +1336,17 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2">
                   <FlipPolaroid
                     src="/assets/yash/yash4.jpg"
-                    caption="mirror thoughts"
-                    backNote="The last days of being lonely. You were right around the corner."
+                    caption="linen shirt & quiet thoughts"
+                    date="early 2025"
+                    backNote="Standing against that wall in my linen shirt with quiet thoughts. The last days before you changed my whole world."
                     rotation={-2}
                     tapeColor="pink"
                     size="xs"
                   />
                   <FlipPolaroid
                     src="/assets/yash/yash5.jpg"
-                    caption="alien Yash matching you"
+                    caption="alien filter & goofy Yash"
+                    date="2025"
                     backNote="Look at how goofy I became once you entered my life! You brought out the real kid in me."
                     rotation={2}
                     tapeColor="cream"
@@ -1366,9 +1386,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/her/h1.jpg"
-                    caption="that soft radiant face"
+                    caption="red kurti & silver jhumkas"
                     date="July 2025"
-                    backNote="The first time I saw this photo, I literally stared for 5 whole minutes. Unfairly pretty."
+                    backNote="Sitting in your red kurti with jhumkas and tilak. The first time I saw this photo, I literally stared for 5 whole minutes. Unfairly pretty."
                     rotation={-1.5}
                     tapeColor="pink"
                     size="xs"
@@ -1380,9 +1400,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/her/h13.jpg"
-                    caption="pure sunshine"
+                    caption="cream turtleneck & angelic smile"
                     date="July 2025"
-                    backNote="Look at that innocent smile. You had no idea what you were doing to my heart."
+                    backNote="Tucking your hair behind your ear at the mall with that pure innocent smile. You had no idea what you were doing to my heart."
                     rotation={2}
                     tapeColor="cream"
                     size="xs"
@@ -1412,13 +1432,13 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-center gap-2 my-1">
                   <ConvoScreenshot
                     src="/assets/convo/ss2.jpg"
-                    caption="our first Schmooze match"
+                    caption="22 May: scrolling thru your highlights"
                     rotation={-1}
                     className="w-28 sm:w-32"
                   />
                   <ConvoScreenshot
                     src="/assets/convo/ss1.jpg"
-                    caption="the awkward 2-month silence"
+                    caption="26 July: 'u did open mic fr?'"
                     rotation={1.5}
                     className="w-28 sm:w-32"
                   />
@@ -1451,7 +1471,7 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <ConvoScreenshot
                     src="/assets/convo/ss3.jpg"
-                    caption="the reply that started it all"
+                    caption="the funny 'Uui Maa' meme banter"
                     rotation={2}
                     className="w-28 sm:w-32"
                   />
@@ -1525,9 +1545,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/her/h2.jpg"
-                    caption="the girl in my head 24/7"
+                    caption="black sparkles & that cute pout"
                     date="Sept 2025"
-                    backNote="I was completely hopelessly smitten by this week. You had completely conquered my schedule."
+                    backNote="That signature Tannu pout that makes my heart completely melt every single time."
                     rotation={2}
                     tapeColor="pink"
                     size="xs"
@@ -1554,10 +1574,10 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <DiaryHeader date="18th September 2025" location="Midnight call" mood="Soft, tender, defenseless" />
                 <div className="flex items-start gap-2">
                   <FlipPolaroid
-                    src="/assets/her/h3.jpg"
-                    caption="when banter turned into love"
+                    src="/assets/her/h5.jpg"
+                    caption="alta on your hands & shy eyes"
                     date="18 Sept 2025"
-                    backNote="Two days before the confession. We both knew something huge was coming."
+                    backNote="Hiding your face behind those mehendi hands. Two days before the confession, my heart was completely yours."
                     rotation={-2}
                     tapeColor="gold"
                     size="xs"
@@ -1601,9 +1621,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/her/h4.jpg"
-                    caption="20 Sept 2025: you confessed first"
+                    caption="11:11 wish & 20th Sept confession"
                     date="20 Sept 2025"
-                    backNote="The greatest night of 2025. You told me you liked me, and my whole universe shifted into color."
+                    backNote="The 11:11 wish that came true. The night you confessed first and my whole universe shifted into color."
                     rotation={1.5}
                     tapeColor="gold"
                     size="xs"
@@ -1670,10 +1690,10 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                     </P>
                   </div>
                   <FlipPolaroid
-                    src="/assets/her/h5.jpg"
-                    caption="that stunning twirl & outfit"
+                    src="/assets/her/h3.jpg"
+                    caption="lavender lehenga & that breathtaking twirl"
                     date="Oct 2025"
-                    backNote="You twirled in this outfit and looked like a goddess. I instantly wanted to punch any guy who dared look at you."
+                    backNote="You twirled in this lavender lehenga and looked like a goddess. I instantly wanted to punch any guy who dared look at you."
                     rotation={-2}
                     tapeColor="rose"
                     size="xs"
@@ -1704,10 +1724,10 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <DiaryHeader date="Late October 2025" location="Quiet night" mood="Surrendered & at peace" />
                 <div className="flex items-start gap-2">
                   <FlipPolaroid
-                    src="/assets/her/h6.jpg"
-                    caption="the girl who owns me completely"
+                    src="/assets/her/h10.jpg"
+                    caption="black hoodie & catwoman mask"
                     date="Oct 2025"
-                    backNote="The night I surrendered completely. There was no more running from it."
+                    backNote="Wearing my black hoodie with that cute Catwoman filter and Hello Kitty stickers. You completely owned me."
                     rotation={2}
                     tapeColor="gold"
                     size="xs"
@@ -1752,9 +1772,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/her/h7.jpg"
-                    caption="my favorite screen view"
+                    caption="3 AM FaceTime & sleepy cheeks"
                     date="Nov 2025"
-                    backNote="Every time my screen lit up with your face, my whole room felt warm."
+                    backNote="Every time my screen lit up with your face, my whole room felt warm. I never wanted to hang up."
                     rotation={-1.5}
                     tapeColor="pink"
                     size="xs"
@@ -1811,9 +1831,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-start gap-2">
                   <FlipPolaroid
                     src="/assets/her/h8.jpg"
-                    caption="counting the hours"
+                    caption="that grumpy baby face on call"
                     date="Dec 2025"
-                    backNote="The days leading up to our first meeting felt like centuries. I couldn't focus on anything."
+                    backNote="Making that cute grumpy pout at me while we count down the hours. The days leading up to our first meeting felt like centuries."
                     rotation={-2}
                     tapeColor="gold"
                     size="xs"
@@ -1853,18 +1873,18 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u1.jpg"
-                    caption="our very first meeting"
+                    caption="black jackets & butterfly filter"
                     date="Winter 2025"
-                    backNote="The second you walked up, I literally forgot how to speak proper English for five minutes."
+                    backNote="Sitting close together, your hand on my chest, putting silly butterfly filters on me."
                     rotation={-1.5}
                     tapeColor="cream"
                     size="xs"
                   />
                   <FlipPolaroid
                     src="/assets/us/u2.jpg"
-                    caption="standing next to you at last"
+                    caption="3D retro vibes & holding hands"
                     date="Winter 2025"
-                    backNote="Finally together in the real world. You fit perfectly right next to my shoulder."
+                    backNote="Sitting side-by-side, fingers intertwined under that retro 3D lens. You fit right next to my shoulder."
                     rotation={2}
                     tapeColor="pink"
                     size="xs"
@@ -1922,18 +1942,18 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u3.jpg"
-                    caption="wind in your hair"
+                    caption="your smile & candid Yash"
                     date="Winter 2025"
-                    backNote="The wind was messing up your hair and you were trying to tuck it behind your ears. The most beautiful sight."
+                    backNote="The cold wind blowing your hair, your hand resting on your cheek. The prettiest sight in all of Delhi."
                     rotation={-2}
                     tapeColor="gold"
                     size="xs"
                   />
                   <FlipPolaroid
-                    src="/assets/us/u4.jpg"
-                    caption="sitting so close in that auto"
+                    src="/assets/us/u14.jpg"
+                    caption="matching pink in that auto ride"
                     date="Winter 2025"
-                    backNote="Right before our first kiss. My heart was practically beating out of my chest."
+                    backNote="Matching pink in that bumpy auto. Sitting so close to you right before our first kiss."
                     rotation={2}
                     tapeColor="rose"
                     size="xs"
@@ -1995,18 +2015,18 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u5.jpg"
-                    caption="walking under streetlights"
+                    caption="lazy cuddles & holding your feet"
                     date="Winter 2025"
-                    backNote="We took tiny steps just to stretch out the minutes together."
+                    backNote="Resting my head against your feet, completely at peace. Nothing else in the world mattered."
                     rotation={-2}
                     tapeColor="cream"
                     size="xs"
                   />
                   <FlipPolaroid
                     src="/assets/us/u6.jpg"
-                    caption="the tightest goodbye hug"
+                    caption="tightest lap hug on green sofa"
                     date="Winter 2025"
-                    backNote="That hug lasted so long the cab driver had to honk. I didn't care."
+                    backNote="Wrapped around each other on the green sofa laughing our hearts out. Pure, unadulterated happiness."
                     rotation={1.5}
                     tapeColor="pink"
                     size="xs"
@@ -2040,9 +2060,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/us/u7.jpg"
-                    caption="15th Feb 2026: our sacred day"
+                    caption="fixing my collar in the kitchen"
                     date="15 Feb 2026"
-                    backNote="15th February 2026. The milestone that locked our fates together forever."
+                    backNote="You leaning in to fix my shirt collar in the kitchen. 15th February 2026, locked together forever."
                     rotation={2}
                     tapeColor="gold"
                     size="xs"
@@ -2068,9 +2088,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u8.jpg"
-                    caption="together on 15th Feb 2026"
+                    caption="the tightest kitchen hug"
                     date="15 Feb 2026"
-                    backNote="Look at us here. Two clumsy kids who found everything they ever wanted in each other."
+                    backNote="Look at us here. Wrapped tightly around each other in the kitchen. Two clumsy kids who found everything in each other."
                     rotation={-1.5}
                     tapeColor="rose"
                     size="xs"
@@ -2111,9 +2131,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/her/h9.jpg"
-                    caption="my raw cute baby"
+                    caption="squishy cheeks & pure cuteness"
                     date="2026 daily life"
-                    backNote="No makeup, hair in a messy bun, laughing at my dumb joke. This is my favorite version of you."
+                    backNote="Squishing your cheeks making goofy faces just to make me smile. You are my absolute favorite human."
                     rotation={-1.5}
                     tapeColor="pink"
                     size="xs"
@@ -2140,9 +2160,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-start gap-2">
                   <FlipPolaroid
                     src="/assets/her/h10.jpg"
-                    caption="drowning in my hoodie"
+                    caption="catwoman mask & hello kitty vibes"
                     date="2026"
-                    backNote="You put this on and declared it was yours now. I never got it back."
+                    backNote="Only Tannu can rock a superhero mask and Hello Kitty stickers and look ridiculously cute."
                     rotation={2}
                     tapeColor="cream"
                     size="xs"
@@ -2189,9 +2209,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/her/h11.jpg"
-                    caption="hungry and dramatic ♡"
+                    caption="leopard print dress & combat boots"
                     date="2026 food diaries"
-                    backNote="Five minutes after this photo, her food arrived and she smiled like sunshine again."
+                    backNote="Looking like an absolute rockstar in this leopard dress and boots before heading out for food."
                     rotation={-2}
                     tapeColor="gold"
                     size="xs"
@@ -2214,18 +2234,18 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/her/h12.jpg"
-                    caption="sleepy cuddles"
+                    caption="crouching in the corridor"
                     date="2026"
-                    backNote="My arm went completely numb 20 minutes ago. Still didn't move an inch."
+                    backNote="Posing playfully by the colorful wooden wall. You turn every ordinary hallway into a photoshoot."
                     rotation={-1.5}
                     tapeColor="pink"
                     size="xs"
                   />
                   <FlipPolaroid
                     src="/assets/her/h13.jpg"
-                    caption="peaceful angel"
+                    caption="cream turtleneck & angelic smile"
                     date="2026"
-                    backNote="The purest soul on this planet. Protected by me always."
+                    backNote="Tucking your hair behind your ear at the mall. The purest soul on this planet. Protected by me always."
                     rotation={2}
                     tapeColor="cream"
                     size="xs"
@@ -2252,18 +2272,18 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u9.jpg"
-                    caption="stolen quiet moment"
+                    caption="kitchen cuddles & our pouty faces"
                     date="2026"
-                    backNote="Just holding you by the window on a random quiet afternoon."
+                    backNote="Holding you close from behind in the kitchen making silly pouts. The little ordinary moments I live for."
                     rotation={-2}
                     tapeColor="gold"
                     size="xs"
                   />
                   <FlipPolaroid
                     src="/assets/us/u10.jpg"
-                    caption="your smile at me"
+                    caption="maroon tube top & neck kisses"
                     date="2026"
-                    backNote="You looked up at me right here and my heart melted into a puddle."
+                    backNote="Sneaking kisses from behind while you take mirror selfies. You look so stunning."
                     rotation={1.5}
                     tapeColor="pink"
                     size="xs"
@@ -2292,9 +2312,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u11.jpg"
-                    caption="our elevator mirror hugs"
+                    caption="holding you close in front of the mirror"
                     date="2026"
-                    backNote="Every elevator ride is an excuse to wrap both arms around you."
+                    backNote="Both hands wrapped around you, breathing you in. My favorite place on earth."
                     rotation={-1.5}
                     tapeColor="cream"
                     size="xs"
@@ -2332,18 +2352,18 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u12.jpg"
-                    caption="our dumb faces"
+                    caption="sitting on my lap by bedroom mirror"
                     date="2026"
-                    backNote="We literally make faces like this in fancy restaurants. Zero regrets."
+                    backNote="You perched on my lap in the mirror. Just two lovers lost in each other's world."
                     rotation={-2}
                     tapeColor="rose"
                     size="xs"
                   />
                   <FlipPolaroid
                     src="/assets/us/u13.jpg"
-                    caption="laughing uncontrollably"
+                    caption="face buried in your neck while you pout"
                     date="2026"
-                    backNote="I was laughing so hard my stomach cramped. You are the funniest person I know."
+                    backNote="Hiding my face in your shoulder because that's where I feel safest. Your warmth is my home."
                     rotation={2}
                     tapeColor="gold"
                     size="xs"
@@ -2378,9 +2398,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   />
                   <FlipPolaroid
                     src="/assets/us/u14.jpg"
-                    caption="stealing my fries"
+                    caption="matching pink during our day out"
                     date="2026"
-                    backNote="'I don't want anything to eat' ... and then this happened."
+                    backNote="Riding through the city with my favorite girl. Demanding fries five minutes after this!"
                     rotation={2}
                     tapeColor="cream"
                     size="xs"
@@ -2449,18 +2469,18 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-center justify-around gap-2 my-1">
                   <FlipPolaroid
                     src="/assets/us/u15.jpg"
-                    caption="holding your hand forever"
+                    caption="white crochet top & gentle cuddles"
                     date="2026"
-                    backNote="I hold your hand in public because I want the whole world to know you are mine."
+                    backNote="Laying back with your hand in mine, you looking breathtaking in that crochet top. I want this forever."
                     rotation={-1.5}
                     tapeColor="gold"
                     size="xs"
                   />
                   <FlipPolaroid
                     src="/assets/us/u16.jpg"
-                    caption="your warmth beside me"
+                    caption="purest forehead kiss polaroid"
                     date="2026"
-                    backNote="Every time you lean your head on my shoulder, all my stress disappears."
+                    backNote="Kissing your forehead while you smile so peacefully. Every time you lean your head on me, all my stress disappears."
                     rotation={2}
                     tapeColor="pink"
                     size="xs"
@@ -2487,9 +2507,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <div className="flex items-start gap-2">
                   <FlipPolaroid
                     src="/assets/us/u17.jpg"
-                    caption="my safe harbor"
+                    caption="kiss on the couch in my white shirt"
                     date="2026"
-                    backNote="You are my safe harbor. No matter what happens outside, here with you I am at peace."
+                    backNote="You wearing my oversized white shirt, holding my face and kissing me. Heaven on earth."
                     rotation={-2}
                     tapeColor="cream"
                     size="xs"
@@ -2528,9 +2548,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/us/u18.jpg"
-                    caption="after the rain comes warmth"
+                    caption="brick wall cafe cuddle & your smile"
                     date="2026"
-                    backNote="We fought for an hour, cried, and then held each other for two hours. We are unbreakable."
+                    backNote="Buried in your hair while you smile at the camera. Storms come and go, but here in your arms we are unbreakable."
                     rotation={2}
                     tapeColor="gold"
                     size="xs"
@@ -2571,9 +2591,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   </div>
                   <FlipPolaroid
                     src="/assets/us/u19.jpg"
-                    caption="my forever person"
+                    caption="Yash winking & Tannu hiding her face"
                     date="2026 & forever"
-                    backNote="My future wife, my best friend, my soulmate. I see you in all my tomorrows."
+                    backNote="Me winking at the camera while you get shy and cover your cute face. My future wife, my soulmate, my forever person."
                     rotation={-1.5}
                     tapeColor="pink"
                     size="xs"
@@ -2681,10 +2701,10 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                     size="xs"
                   />
                   <FlipPolaroid
-                    src="/assets/us/u19.jpg"
-                    caption="2026: the boy you softened"
+                    src="/assets/us/u4.jpg"
+                    caption="sitting on my lap in your white skirt"
                     date="2026"
-                    backNote="The boy whose entire happiness resides in your smile."
+                    backNote="The boy whose entire happiness resides in your smile, holding you on his lap forever."
                     rotation={2}
                     tapeColor="pink"
                     size="xs"
@@ -2874,7 +2894,8 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
             width={380} height={580} size="stretch"
             minWidth={320} maxWidth={520}
             minHeight={460} maxHeight={720}
-            maxShadowOpacity={0.3}
+            flippingTime={600}
+            maxShadowOpacity={0.4}
             showCover={false}
             mobileScrollSupport={true}
             disableFlipByClick={false}
