@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HTMLFlipBook from 'react-pageflip';
-import { ChevronLeft, ChevronRight, Heart, Bookmark, Film, Sparkles, Volume2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Bookmark, Film, Sparkles, Volume2, Maximize2, X, Flame } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { TulipSVG } from './TulipSVG';
 import { LilySVG } from './LilySVG';
@@ -500,74 +500,302 @@ const GoldenScratchCard: React.FC<GoldenScratchCardProps> = ({
   );
 };
 
-// ─── NEW CREATIVE COMPONENT 11: INTERACTIVE BIRTHDAY CAKE & CANDLE BLOW ─────
-const InteractiveBirthdayCake: React.FC<{ onOpenLetter: () => void }> = ({ onOpenLetter }) => {
-  const [blown, setBlown] = useState(false);
+// ─── GRAND FINALE: CINEMATIC REAL BIRTHDAY PICTURE REVEAL ─────────────────
+interface CinematicBirthdayRevealProps {
+  onOpenLetter: () => void;
+}
 
-  const handleBlow = (e: React.MouseEvent) => {
+const CinematicBirthdayReveal: React.FC<CinematicBirthdayRevealProps> = ({ onOpenLetter }) => {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [candleBlown, setCandleBlown] = useState(false);
+  const [isCinemaModalOpen, setIsCinemaModalOpen] = useState(false);
+
+  const handleReveal = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setBlown(true);
+    setIsRevealed(true);
+    soundEngine.playPaperFlip();
 
     triggerReaction({
       emoji: '🎂',
-      title: 'Wish Made & Locked! 🎂✨',
-      subtitle: 'Yash will spend this whole year making it come true for you ♡',
-      particles: ['🎂', '✨', '🎉', '💖', '🥳', '🌟']
+      title: 'Our Real Birthday Moment ♡',
+      subtitle: 'Clicked when we met earlier... the prettiest girl in the universe ✨',
+      particles: ['🎂', '✨', '💖', '🕯️', '🌸', '💫', '🎉']
     });
 
     confetti({
-      particleCount: 100,
+      particleCount: 130,
+      spread: 90,
+      origin: { y: 0.55 },
+      colors: ['#ad1457', '#e91e63', '#ffc107', '#ff80ab', '#ffffff', '#ffd700']
+    });
+  };
+
+  const handleBlowCandle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCandleBlown(true);
+
+    triggerReaction({
+      emoji: '✨',
+      title: 'Wish Sealed in the Stars! 🎂✨',
+      subtitle: 'Yash will spend this whole year making every single wish come true for you ♡',
+      particles: ['✨', '🕯️', '💖', '🌟', '🥳', '🌸']
+    });
+
+    confetti({
+      particleCount: 110,
       spread: 80,
       origin: { y: 0.6 },
-      colors: ['#ad1457', '#e91e63', '#ffc107', '#ff80ab', '#ffffff']
+      colors: ['#ffd700', '#ff80ab', '#ffffff', '#e91e63']
     });
   };
 
   return (
-    <div onClick={(e) => e.stopPropagation()} className="p-2.5 rounded-sm bg-[#fff8e7] border-2 border-amber-300 shadow-sm max-w-[270px] mx-auto space-y-1.5 my-1 text-center select-none">
-      <div className="flex justify-center items-center gap-3 text-2xl">
-        {!blown ? (
-          <>
-            <span className="animate-bounce">🕯️🔥</span>
-            <span className="animate-pulse">🎂</span>
-            <span className="animate-bounce">🔥🕯️</span>
-          </>
-        ) : (
-          <span className="text-3xl animate-bounce">✨ 🎂 💨 ✨</span>
-        )}
-      </div>
-
-      <p className="font-handwriting text-base font-bold text-rose-deep">
-        {!blown ? 'Make a Wish, My Babu!' : 'Wish Made & Locked in the Stars! 🌟'}
-      </p>
-
-      <p className="font-handwriting text-xs text-amber-950/70 italic">
-        {!blown
-          ? 'Close your eyes, think of your happiest wish, and blow the candles!'
-          : 'Whatever you wished for, I will spend this whole year making come true for you ♡'}
-      </p>
-
-      {!blown ? (
-        <button
-          type="button"
-          onClick={handleBlow}
-          className="w-full py-1 px-3 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-handwriting text-[13px] font-bold shadow-xs cursor-pointer transition-all active:scale-95"
+    <div onClick={(e) => e.stopPropagation()} className="my-1.5 w-full max-w-[340px] mx-auto select-none">
+      {!isRevealed ? (
+        // CINEMATIC TEASER CARD (BEFORE REVEAL)
+        <div
+          onClick={handleReveal}
+          className="relative group p-3 sm:p-4 rounded-md bg-gradient-to-b from-[#2a131b] via-[#381a24] to-[#1c0c12] text-amber-100 border-2 border-amber-400/60 shadow-[0_4px_20px_rgba(42,19,27,0.35)] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
         >
-          💨 Blow the Candles!
-        </button>
+          {/* Shimmer light effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+
+          {/* Fairy light icons header */}
+          <div className="flex justify-center items-center gap-2 text-amber-300/80 text-sm mb-1">
+            <span className="animate-pulse">✨</span>
+            <span>🕯️</span>
+            <span className="text-base animate-bounce">🎂</span>
+            <span>🕯️</span>
+            <span className="animate-pulse">✨</span>
+          </div>
+
+          <div className="inline-block px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-300 font-handwriting text-xs uppercase tracking-wider font-bold mb-1">
+            🎬 Our Real Birthday Moment
+          </div>
+
+          <h4 className="font-handwriting text-lg sm:text-xl font-bold text-amber-200">
+            Clicked When We Met Earlier ♡
+          </h4>
+
+          <p className="font-handwriting text-xs text-amber-100/80 italic my-1.5 leading-snug">
+            "I captured the exact moment you held your birthday cake under our fairy lights with that glowing candle..."
+          </p>
+
+          <button
+            type="button"
+            onClick={handleReveal}
+            className="w-full mt-2 py-2 px-3 rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-handwriting text-sm font-bold shadow-md cursor-pointer transition-all flex items-center justify-center gap-1.5 animate-pulse"
+          >
+            <Sparkles className="w-4 h-4 text-amber-200" />
+            <span>Tap for Cinematic Reveal ✨</span>
+          </button>
+        </div>
       ) : (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenLetter();
-          }}
-          className="w-full py-1.5 px-3 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-handwriting text-sm font-bold shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 animate-pulse"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Open Yash's Birthday Letter 💌</span>
-        </button>
+        // REVEALED CINEMATIC POLAROID CARD
+        <div className="animate-fadeIn relative bg-[#fffdf9] p-2.5 sm:p-3 pb-3 sm:pb-3.5 shadow-xl border border-amber-900/20 rounded-xs space-y-2 -rotate-[0.5deg]">
+          {/* Tape on top */}
+          <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-20 h-4 bg-amber-100/90 border-x border-amber-300/80 border-dashed shadow-xs z-10" />
+
+          {/* Golden Ribbon Header */}
+          <div className="flex items-center justify-between text-[11px] font-handwriting text-amber-900/70 border-b border-amber-900/10 pb-1 pt-1">
+            <span className="font-bold text-rose-deep flex items-center gap-1">
+              <span>🎬</span> When We Met Earlier
+            </span>
+            <span className="italic">Our Birthday Candle ♡</span>
+          </div>
+
+          {/* Photograph Container with ambient candle glow & fairy lights */}
+          <div
+            onClick={() => setIsCinemaModalOpen(true)}
+            className="relative rounded-xs overflow-hidden cursor-pointer group shadow-inner border border-amber-900/10"
+            title="Tap to view in Fullscreen Cinema Mode"
+          >
+            <img
+              src="/assets/her/birthday_cake_candid.jpg"
+              alt="Tannu with birthday cake"
+              className="w-full max-h-[260px] sm:max-h-[300px] object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+
+            {/* Ambient Candlelight Glow overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+
+            {/* Twinkling fairy light badge */}
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-amber-200 font-handwriting text-[10.5px] border border-amber-300/30 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-300 animate-spin" style={{ animationDuration: '6s' }} />
+              <span>fairy lights & candle flame</span>
+            </div>
+
+            {/* Fullscreen icon indicator */}
+            <div className="absolute bottom-2 right-2 px-2 py-1 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white font-handwriting text-xs border border-white/20 flex items-center gap-1 shadow-md transition-all group-hover:scale-105">
+              <Maximize2 className="w-3 h-3 text-amber-300" />
+              <span>Fullscreen Cinema</span>
+            </div>
+          </div>
+
+          {/* Romantic Handwritten Caption */}
+          <div className="space-y-1 text-center">
+            <p className="font-handwriting text-[13px] sm:text-[14px] leading-snug text-[#341b12] italic">
+              "You holding your cake, looking down at that tiny flame under our fairy lights... I swear the whole room lit up just from your smile. You are my greatest blessing, Tannu."
+            </p>
+            <p className="font-handwriting text-[11px] text-rose-deep font-bold">
+              — Clicked with all my love when we met earlier ♡
+            </p>
+          </div>
+
+          {/* Interactive Actions (Blow Candle / Open Letter / Cinema Mode) */}
+          <div className="space-y-1.5 pt-1 border-t border-amber-900/10">
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={handleBlowCandle}
+                className={`py-1.5 px-2 rounded-full font-handwriting text-xs font-bold shadow-xs cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1 ${
+                  !candleBlown
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
+                    : 'bg-amber-100 text-amber-900 border border-amber-300'
+                }`}
+              >
+                <Flame className={`w-3.5 h-3.5 ${!candleBlown ? 'text-amber-200 animate-bounce' : 'text-amber-600'}`} />
+                <span>{!candleBlown ? 'Blow the Candle 💨' : 'Wish Made! ✨'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsCinemaModalOpen(true)}
+                className="py-1.5 px-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-deep border border-rose-300 font-handwriting text-xs font-bold shadow-xs cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Cinema Mode 🎬</span>
+              </button>
+            </div>
+
+            {/* Letter reveal button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenLetter();
+              }}
+              className="w-full py-1.5 px-3 rounded-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 active:scale-95 text-white font-handwriting text-sm font-bold shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5"
+            >
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              <span>Open Yash's Birthday Letter 💌</span>
+            </button>
+          </div>
+        </div>
       )}
+
+      {/* FULLSCREEN THEATRE CINEMA MODAL */}
+      <AnimatePresence>
+        {isCinemaModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsCinemaModalOpen(false)}
+            className="fixed inset-0 z-50 bg-[#0d0509]/95 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-6 overflow-y-auto"
+          >
+            {/* Ambient twinkling fairy lights header */}
+            <div className="absolute top-2 left-0 right-0 flex justify-around pointer-events-none opacity-60 text-xs sm:text-sm text-amber-200 animate-pulse">
+              <span>✨</span><span>🌟</span><span>✨</span><span>🌟</span><span>✨</span><span>🌟</span><span>✨</span>
+            </div>
+
+            {/* Cinema Container */}
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-lg w-full bg-[#1b0c13] border-2 border-amber-400/50 rounded-lg p-3 sm:p-5 shadow-[0_0_50px_rgba(251,191,36,0.3)] text-amber-100 space-y-3 my-auto"
+            >
+              {/* Top Bar with Close button */}
+              <div className="flex items-center justify-between border-b border-amber-400/20 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base sm:text-lg">🎬</span>
+                  <div>
+                    <h3 className="font-handwriting text-base sm:text-lg font-bold text-amber-200 leading-tight">
+                      When We Met Earlier
+                    </h3>
+                    <p className="font-handwriting text-[11px] text-rose-300">
+                      Our real birthday candle moment under the fairy lights ♡
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCinemaModalOpen(false)}
+                  className="p-1 rounded-full bg-white/10 hover:bg-white/20 text-amber-200 transition-colors cursor-pointer"
+                  title="Close Cinema Mode"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Main Photo Display */}
+              <div className="relative rounded-sm overflow-hidden border border-amber-300/40 shadow-2xl bg-black">
+                <img
+                  src="/assets/her/birthday_cake_candid.jpg"
+                  alt="Tannu Birthday Candle Grand Finale"
+                  className="w-full max-h-[50vh] sm:max-h-[58vh] object-contain mx-auto"
+                />
+                {/* Subtle warm glow around cake */}
+                <div className="absolute inset-0 pointer-events-none bg-radial from-amber-400/10 via-transparent to-black/30" />
+              </div>
+
+              {/* Yash's personal cinematic note */}
+              <div className="bg-black/40 rounded-sm p-2.5 sm:p-3 border border-amber-400/20 text-center space-y-1">
+                <p className="font-handwriting text-sm sm:text-base text-amber-100 italic leading-snug">
+                  "This was us when we met earlier... You holding your cake, the candle glowing against your cheeks, and fairy lights wrapped around our little world. If I could freeze one second in time forever, it would be this exact moment with you."
+                </p>
+                <p className="font-handwriting text-xs text-rose-300 font-bold">
+                  Happy Birthday, my whole heart. Forever yours, Yash ♡
+                </p>
+              </div>
+
+              {/* Action Buttons in Cinema Modal */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleBlowCandle}
+                  className="py-1.5 px-3.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-handwriting text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <Flame className="w-4 h-4 text-amber-200" />
+                  <span>{!candleBlown ? 'Blow Candle 💨' : 'Wish Sealed! 🌟'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerReaction({
+                      emoji: '💋',
+                      title: '100 Birthday Forehead Kisses! 💋',
+                      subtitle: 'Right on your forehead, for the sweetest girl in the universe ♡',
+                      particles: ['💋', '💖', '✨', '🌸', '🥰']
+                    });
+                  }}
+                  className="py-1.5 px-3.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-handwriting text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <Heart className="w-4 h-4 fill-white" />
+                  <span>Send Forehead Kiss 💋</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCinemaModalOpen(false);
+                    onOpenLetter();
+                  }}
+                  className="py-1.5 px-3.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-white font-handwriting text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Open Letter 💌</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -2480,11 +2708,11 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 <h3 className="font-handwriting text-3xl font-bold text-rose-deep drop-shadow-xs">Happy Birthday, My Tannu ♡</h3>
                 <div className="w-16 h-0.5 bg-amber-900/20 mx-auto my-0.5" />
                 <P className="italic text-[#2c1d18]">
-                  Happy Birthday to the girl who holds my entire world in her hands. Today is about celebrating the day the universe gave me my greatest blessing.
+                  Happy Birthday to the girl who holds my entire world in her hands. When we met earlier and lit this candle together, looking at your smile under the fairy lights was the happiest moment of my life.
                 </P>
 
-                {/* Interactive Candle Blowing Cake */}
-                <InteractiveBirthdayCake onOpenLetter={onOpenLetter} />
+                {/* Grand Finale: Cinematic Real Birthday Picture Reveal */}
+                <CinematicBirthdayReveal onOpenLetter={onOpenLetter} />
 
                 <ForeheadKissButton label="Send 100 Birthday Forehead Kisses 💋" />
               </div>
