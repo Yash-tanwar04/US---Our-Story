@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, forwardRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import HTMLFlipBook from 'react-pageflip';
 import { ChevronLeft, ChevronRight, Heart, Bookmark, Film, Sparkles, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -695,27 +696,25 @@ const Page = forwardRef<HTMLDivElement, {
   return (
     <div
       ref={ref}
-      className={`${bgClass} text-ink-dark h-full w-full relative flex flex-col overflow-hidden`}
+      className={`${bgClass} text-ink-dark min-h-[500px] md:h-full w-full relative flex flex-col justify-between overflow-hidden shadow-sm`}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Book binding gutter shadow */}
-      <div className={`absolute top-0 bottom-0 w-6 pointer-events-none z-10 ${
-        isLeft ? 'right-0 bg-gradient-to-l from-amber-950/[0.12] to-transparent' : 'left-0 bg-gradient-to-r from-amber-950/[0.12] to-transparent'
-      }`} />
-      
-      {/* Scrollable content area: cozy responsive padding on mobile with min-h-0 for flex scrolling */}
+      {/* Book binding gutter shadow on desktop */}
       <div
-        className="p-2 sm:p-4 flex-1 min-h-0 flex flex-col justify-between overflow-y-auto z-0 scrollbar-thin overscroll-contain"
-        style={{
-          WebkitOverflowScrolling: 'touch',
-          touchAction: 'pan-y',
-        }}
-      >
+        className={`hidden md:block absolute top-0 bottom-0 w-6 pointer-events-none z-10 ${
+          isLeft
+            ? 'right-0 bg-gradient-to-l from-amber-950/[0.12] to-transparent'
+            : 'left-0 bg-gradient-to-r from-amber-950/[0.12] to-transparent'
+        }`}
+      />
+
+      {/* Content area: natural height on mobile so user can scroll down to read EVERYTHING below! */}
+      <div className="p-3 sm:p-4 md:flex-1 md:min-h-0 md:overflow-y-auto flex flex-col justify-between z-0">
         {children}
       </div>
 
       {/* Burned vintage footer with dedicated Heart Page-Turn buttons */}
-      <div className="px-2.5 sm:px-4 py-2 flex items-center justify-between text-amber-950/70 font-handwriting border-t border-amber-900/15 z-20 shrink-0 bg-amber-900/[0.04]">
+      <div className="px-3 sm:px-4 py-2.5 flex items-center justify-between text-amber-950/70 font-handwriting border-t border-amber-900/15 z-20 shrink-0 bg-amber-900/[0.04] mt-auto select-none">
         {/* Left page-turn heart button */}
         {pageNumber > 1 ? (
           <button
@@ -725,7 +724,7 @@ const Page = forwardRef<HTMLDivElement, {
               e.preventDefault();
               flipPrev();
             }}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 hover:bg-rose-500/25 active:scale-90 border border-rose-400/50 text-rose-deep text-[12.5px] sm:text-[13.5px] font-bold cursor-pointer transition-all shadow-xs touch-manipulation group"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/15 hover:bg-rose-500/25 active:scale-90 border border-rose-400/50 text-rose-deep text-[12.5px] sm:text-[13.5px] font-bold cursor-pointer transition-all shadow-xs touch-manipulation group"
             title="Turn to previous page"
           >
             <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 group-hover:scale-110 transition-transform" />
@@ -749,7 +748,7 @@ const Page = forwardRef<HTMLDivElement, {
               e.preventDefault();
               flipNext();
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-90 border border-rose-600 text-white text-[12.5px] sm:text-[13.5px] font-bold cursor-pointer transition-all shadow-sm touch-manipulation group animate-pulse hover:animate-none"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-90 border border-rose-600 text-white text-[12.5px] sm:text-[13.5px] font-bold cursor-pointer transition-all shadow-sm touch-manipulation group animate-pulse hover:animate-none"
             title="Turn to next page"
           >
             <span>Turn page</span>
@@ -801,25 +800,55 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
     soundEngine.setTrackForPage(e.data + 1);
   };
 
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const nextFlip = () => {
-    const pf = (flipBookRef.current as any)?.pageFlip();
-    if (!pf) return;
-    if (pf.getState && pf.getState() !== 'read') return;
+    if (_currentPage >= totalPages - 1) return;
     soundEngine.playPaperFlip();
-    pf.flipNext();
+    const next = _currentPage + 1;
+    setCurrentPage(next);
+    soundEngine.setTrackForPage(next + 1);
+    if (!isMobile && flipBookRef.current) {
+      (flipBookRef.current as any)?.pageFlip()?.flipNext();
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const prevFlip = () => {
-    const pf = (flipBookRef.current as any)?.pageFlip();
-    if (!pf) return;
-    if (pf.getState && pf.getState() !== 'read') return;
+    if (_currentPage <= 0) return;
     soundEngine.playPaperFlip();
-    pf.flipPrev();
+    const prev = _currentPage - 1;
+    setCurrentPage(prev);
+    soundEngine.setTrackForPage(prev + 1);
+    if (!isMobile && flipBookRef.current) {
+      (flipBookRef.current as any)?.pageFlip()?.flipPrev();
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const jumpToPage = (pageNum: number) => {
+    const targetIdx = Math.max(0, Math.min(totalPages - 1, pageNum - 1));
     soundEngine.playPaperFlip();
-    (flipBookRef.current as any)?.pageFlip()?.turnToPage(pageNum - 1);
+    setCurrentPage(targetIdx);
+    soundEngine.setTrackForPage(targetIdx + 1);
+    if (!isMobile && flipBookRef.current) {
+      (flipBookRef.current as any)?.pageFlip()?.turnToPage(targetIdx);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setShowChapterMenu(false);
   };
 
@@ -829,14 +858,1675 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
     setTimeout(() => window.location.reload(), 1200);
   };
 
+  const nextFlipRef = useRef<() => void>(() => {});
+  const prevFlipRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    nextFlipRef.current = nextFlip;
+    prevFlipRef.current = prevFlip;
+  });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') nextFlip();
-      if (e.key === 'ArrowLeft') prevFlip();
+      if (e.key === 'ArrowRight') nextFlipRef.current();
+      if (e.key === 'ArrowLeft') prevFlipRef.current();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  const allPages = [
+// PAGE 1
+            <Page key={1} pageNumber={1} totalPages={totalPages}>
+
+              <div className="h-full flex flex-col justify-between text-center py-1">
+                <div className="flex justify-between w-full opacity-60">
+                  <TulipSVG size={26} color="#8b263e" />
+                  <LilySVG size={26} color="#ad1457" />
+                </div>
+                <div className="space-y-1.5 my-auto max-w-[280px] mx-auto">
+                  <div className="font-handwriting text-5xl sm:text-6xl font-bold text-rose-deep tracking-tight">US ♡</div>
+                  <div className="w-14 h-0.5 bg-amber-900/25 mx-auto" />
+                  <p className="font-handwriting italic text-[16px] sm:text-[17.5px] text-[#3d2721] leading-snug">
+                    Tannu, this is the true story of how a selfish, careless &amp; narcissistic boy fell completely, hopelessly in love with the kindest, cutest soul on earth.
+                  </p>
+                  <div className="w-10 h-px bg-amber-900/20 mx-auto" />
+                  <Hand className="text-lg text-[#3d2721]">My story, your story, and</Hand>
+                  <p className="font-handwriting text-2xl sm:text-3xl font-bold text-rose-deep tracking-wide">OUR STORY</p>
+                  <div className="font-handwriting italic text-[14px] text-[#4a2e25] space-y-0.5 text-left pl-3 bg-amber-900/[0.04] p-1.5 rounded-xs border-l-2 border-rose-deep/40">
+                    <p>• Started in 2025 &amp; forever expanding.</p>
+                    <p>• Full of our messy ups &amp; downs.</p>
+                    <p>• Just two clumsy kids loving each other.</p>
+                    <p>• Genuinely the best phase of my life.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 w-full max-w-[270px] mx-auto">
+                  <LoveMeter caption="Yash's love for Tannu right now:" />
+                  <ForeheadKissButton label="Tap to send a forehead kiss to Yash 💋" />
+                  <StickyNote color="pink" rotation={1} className="w-full text-center">
+                    Dedicated to my Tannu — tap 'Turn page 💖' below to open my heart to you ♡
+                  </StickyNote>
+                </div>
+              </div>
+
+            </Page>,
+// PAGE 2
+            <Page key={2} pageNumber={2} totalPages={totalPages} warm>
+
+              <div className="space-y-1">
+                <DiaryHeader date="2025 - Forever" location="Our Universe" mood="Grateful for every single second" />
+                <div className="text-center pb-0.5 border-b border-amber-900/20">
+                  <span className="font-handwriting text-[12px] uppercase text-rose-deep font-bold">Chapters of My Heart</span>
+                  <h3 className="font-handwriting text-xl sm:text-2xl font-bold text-ink-dark leading-tight">Index of Our Memories</h3>
+                </div>
+                <P className="italic text-center text-xs sm:text-sm text-amber-950/80 leading-snug">
+                  "Every single page in this diary, Tannu, was handwritten just for you."
+                </P>
+                <div className="space-y-0 font-handwriting text-[12.5px] sm:text-[14px] text-[#3d2a23] pl-2 border-l-2 border-amber-900/20 leading-tight">
+                  <p><strong className="text-rose-deep font-bold">Ch 1 (p. 3):</strong> Who I was before 2025 (The guarded boy)</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 2 (p. 7):</strong> July 2025: When we were strangers</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 3 (p. 9):</strong> Sept 2025: That comedy story I replied to</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 4 (p. 13):</strong> 20th September 2025 (YOU confessed first!)</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 5 (p. 15):</strong> Oct 2025: The twirl &amp; the first jealousy</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 6 (p. 17):</strong> Nov 2025: 3 AM FaceTime hours &amp; screens</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 7 (p. 20):</strong> Winter 2025: Café table &amp; auto ride first kiss</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 7.5 (p. 25):</strong> 15th February 2026 (Our sacred milestone)</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 8 (p. 27):</strong> 2026: The real, sleepy, capsicum Tannu</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 9 (p. 31):</strong> Stolen polaroids &amp; mirror hugs</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 10 (p. 33):</strong> Our stupid little moments &amp; bakchodi</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 11 (p. 36):</strong> Things I notice about you &amp; never say</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 12 (p. 38):</strong> Fights, storms &amp; kitchen hugs</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 13 (p. 39):</strong> The life I imagine (Santorini dreams)</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 14 (p. 41):</strong> In every lifetime, it will still be you</p>
+                  <p><strong className="text-rose-deep font-bold">Ch 15 (p. 42):</strong> The boy you transformed</p>
+                  <p><strong className="text-rose-deep font-bold">Finale (p. 43):</strong> Happy Birthday to my favorite girl ♡</p>
+                </div>
+                <PeelWaxSeal
+                  title="Yash's secret note before you start reading"
+                  secret="Tannu, 2025 was the year my life truly began. Everything before you was just waiting for you to arrive."
+                />
+              </div>
+
+            </Page>,
+// PAGE 3
+            <Page key={3} pageNumber={3} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="2024 - Early 2025" location="College / Hostel" mood="Cold, detached, pretending to be fine" />
+                <ChapterHeader number="Chapter One" title="The Boy Before You" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      Who was I before you walked into my life, Tannu?
+                    </P>
+                    <P>
+                      To everyone else in 2024, I acted completely nonchalant. Cool, detached, like I never needed anyone to affect me.
+                    </P>
+                    <P>
+                      I convinced myself I didn't care about anything or anyone.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/yash/yash_before.jpg"
+                    caption="me before you"
+                    date="2024 hostel era"
+                    backNote="Look at my face here. So serious, so guarded. I had no idea a girl named Tanisha was about to turn my whole world upside down in 2025."
+                    rotation={2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  I used to sit alone in class, acting like I had it all together, but there was this constant emptiness eating at me. Behind all that swagger, that insecure kid just desperately wanted to be loved.
+                </P>
+                <MemoryQuiz
+                  question="Guess what Yash's routine was before meeting you in 2025?"
+                  options={["Gym & sleep", "Partying nonstop", "Sitting alone pretending to not care"]}
+                  reaction="Sitting alone pretending to not care. Until you came along in 2025 and gave me a reason to care about everything."
+                />
+                <GoldenScratchCard
+                  prompt="Scratch to reveal Yash's hidden confession"
+                  hiddenMessage="I was searching for a home in all the wrong people, not knowing my real home was waiting for me in 2025."
+                />
+              </div>
+
+            </Page>,
+// PAGE 4
+            <Page key={4} pageNumber={4} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Hostel Era 2024" location="Room 204" mood="Restless & guarded" />
+                <div className="flex items-start gap-2">
+                  <FlipPolaroid
+                    src="/assets/yash/yash2.jpg"
+                    caption="the guarded boy"
+                    date="pre-Tannu days"
+                    backNote="I used to think being emotionless was a strength. You proved to me that loving with your whole heart is the bravest thing in the world."
+                    rotation={-2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <P>
+                      I had built these tall, rigid walls around myself. I used humor as a shield and sarcasm as armor so nobody could get close enough to see that I was struggling.
+                    </P>
+                    <P>
+                      I thought that if I never let anyone in, I would never get hurt.
+                    </P>
+                  </div>
+                </div>
+                <Quote>
+                  "I called it being independent. The truth was, I was just terrified of being vulnerable."
+                </Quote>
+                <P>
+                  I was careless with my words and selfish with my time. But then you showed up, and you didn't run away when I was distant. You just stood there with your soft heart and slowly took down every brick I built.
+                </P>
+                <PeelWaxSeal
+                  title="Secret confession about my walls"
+                  secret="Whenever someone tried to get close in the past, I pushed them away. You were the only person whose stubborn warmth broke straight through my defenses."
+                />
+                <MarginNote color="ink" rotation={1} className="text-right">
+                  — you broke through without even trying ♡
+                </MarginNote>
+              </div>
+
+            </Page>,
+// PAGE 5
+            <Page key={5} pageNumber={5} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="College 2024" location="Lecture Hall" mood="Lost in my own head" />
+                <P className="font-semibold text-rose-deep">
+                  The deepest insecurity I used to hide:
+                </P>
+                <P>
+                  I wanted to know that my presence actually mattered to someone, and that my absence would actually hurt. I wanted to be someone's first choice.
+                </P>
+                <div className="flex items-center justify-center my-1">
+                  <FlipPolaroid
+                    src="/assets/yash/yash3.jpg"
+                    caption="looking for something real"
+                    backNote="I was wandering through crowds wondering if anyone would ever truly see me. Then you came and looked right into my soul."
+                    rotation={1}
+                    tapeColor="rose"
+                    size="sm"
+                  />
+                </div>
+                <P>
+                  I spent so many nights staring at the ceiling, wondering if anyone would ever look at the real, messy, unpolished version of me and still choose to stay.
+                </P>
+                <InteractiveChecklist
+                  title="Things Yash pretended he didn't care about"
+                  items={[
+                    "Being someone's first choice",
+                    "Receiving sweet goodnight texts",
+                    "Having a real home in another person's arms"
+                  ]}
+                />
+                <StickyNote color="amber" rotation={2} className="text-center">
+                  And then in 2025 the universe gave me you — the one person who makes me feel deeply chosen every single day.
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 6
+            <Page key={6} pageNumber={6} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Early 2025" location="Gurugram" mood="Waiting for fate" />
+                <div className="flex items-center justify-around gap-2">
+                  <FlipPolaroid
+                    src="/assets/yash/yash4.jpg"
+                    caption="mirror thoughts"
+                    backNote="The last days of being lonely. You were right around the corner."
+                    rotation={-2}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/yash/yash5.jpg"
+                    caption="alien Yash matching you"
+                    backNote="Look at how goofy I became once you entered my life! You brought out the real kid in me."
+                    rotation={2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  Look at these pictures of me back then. I looked so lost, trying to find purpose in all the wrong places.
+                </P>
+                <P>
+                  I didn't know it yet, but mid-2025 was about to introduce me to Tanisha Jha — the girl who would completely rewrite my destiny.
+                </P>
+                <ForeheadKissButton label="Tap to send comfort to past Yash 💋" />
+                <div className="flex justify-between items-center pt-1 border-t border-amber-900/15">
+                  <VintageStamp text="CHAPTER 1 COMPLETE" rotation={-2} />
+                  <MarginNote color="red" rotation={1}>
+                    2025 starts on next page →
+                  </MarginNote>
+                </div>
+              </div>
+
+            </Page>,
+// PAGE 7
+            <Page key={7} pageNumber={7} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="July 2025" location="New Delhi / Gurugram" mood="Curious about a stranger" />
+                <ChapterHeader number="Chapter Two" title="The Girl I Didn't Know" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      July 2025. And then came Tanisha Jha.
+                    </P>
+                    <P>
+                      I didn't know you existed. I was busy living in my own bubble, completely unaware that someone with your energy, your humor, and your heart was out there.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/her/h1.jpg"
+                    caption="that soft radiant face"
+                    date="July 2025"
+                    backNote="The first time I saw this photo, I literally stared for 5 whole minutes. Unfairly pretty."
+                    rotation={-1.5}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  The first time I saw your pictures, I stopped dead in my tracks. You had this effortless, quiet charm — this warmth that felt like morning sunlight after months of cold rain.
+                </P>
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/her/h13.jpg"
+                    caption="pure sunshine"
+                    date="July 2025"
+                    backNote="Look at that innocent smile. You had no idea what you were doing to my heart."
+                    rotation={2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                  <StickyNote color="pink" rotation={-2} className="w-36 text-center">
+                    "I didn't believe in love at first sight, but you made me second-guess everything in 2025."
+                  </StickyNote>
+                </div>
+                <PeelWaxSeal
+                  title="What went through my head the first second I saw you"
+                  secret="I literally paused and thought: 'Who is this girl and why does her smile feel so familiar, like I've known her forever?'"
+                />
+              </div>
+
+            </Page>,
+// PAGE 8
+            <Page key={8} pageNumber={8} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="August 2025" location="Schmooze App" mood="Awkward silence & suspense" />
+                <P className="font-bold text-rose-deep">
+                  We matched on Schmooze in August 2025.
+                </P>
+                <P>
+                  Out of thousands of people swiping memes, our broken humor matched us together. We exchanged a couple of quick, casual texts... and then came two whole months of complete, dead silence.
+                </P>
+                <div className="flex items-center justify-center gap-2 my-1">
+                  <ConvoScreenshot
+                    src="/assets/convo/ss2.jpg"
+                    caption="our first Schmooze match"
+                    rotation={-1}
+                    className="w-28 sm:w-32"
+                  />
+                  <ConvoScreenshot
+                    src="/assets/convo/ss1.jpg"
+                    caption="the awkward 2-month silence"
+                    rotation={1.5}
+                    className="w-28 sm:w-32"
+                  />
+                </div>
+                <MemoryQuiz
+                  question="Why did we go completely silent for two months?"
+                  options={["Too busy studying", "Both waiting for the other", "Destiny building suspense"]}
+                  reaction="Destiny was definitely building suspense! But honestly, I was just too intimidated by how pretty you were."
+                />
+                <StickyNote color="yellow" rotation={1} className="text-center">
+                  Two months of awkward quiet. We almost became strangers who never happened. But the universe wasn't going to let us slip away in 2025.
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 9
+            <Page key={9} pageNumber={9} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Early September 2025" location="Instagram" mood="Taking a leap of faith" />
+                <ChapterHeader number="Chapter Three" title="The Story I Replied To" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P>
+                      Then, one random night in September 2025, you posted a stand-up comedy reel on your Instagram story.
+                    </P>
+                    <P className="font-bold text-rose-deep">
+                      I didn't swipe past. I typed a reply.
+                    </P>
+                  </div>
+                  <ConvoScreenshot
+                    src="/assets/convo/ss3.jpg"
+                    caption="the reply that started it all"
+                    rotation={2}
+                    className="w-28 sm:w-32"
+                  />
+                </div>
+                <P>
+                  That single, ordinary tap on my screen in September 2025 was the best decision of my entire existence. If I had closed the app that night, I would have missed out on my whole world.
+                </P>
+                <FoldOutNote
+                  teaser="What I was doing right before I replied"
+                  letter="I typed, deleted, and re-typed that message three times. I was trying so hard to sound funny and casual, but my hands were literally sweating over an Instagram DM."
+                />
+                <div className="flex justify-between items-center pt-1 border-t border-amber-900/15">
+                  <VintageStamp text="BEST DM OF 2025" rotation={-2} />
+                  <MarginNote color="red" rotation={2}>
+                    and the magic began →
+                  </MarginNote>
+                </div>
+              </div>
+
+            </Page>,
+// PAGE 10
+            <Page key={10} pageNumber={10} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Mid September 2025" location="DMs till 3 AM" mood="Laughing till my ribs hurt" />
+                <P className="font-bold text-rose-deep">
+                  We talked about stand-up comedy for hours.
+                </P>
+                <P>
+                  I realized you had the exact same sarcastic, slightly unhinged humor as me. We tore each other's jokes apart and matched each other line for line.
+                </P>
+                <div className="flex items-center justify-center my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/her/hv1.mp4"
+                    poster="/assets/her/h8.jpg"
+                    caption="your smile while roasting me"
+                    rotation={-1}
+                    size="sm"
+                  />
+                </div>
+                <P>
+                  You weren't like anyone else I'd ever met. You were sharp, funny, and completely unapologetically yourself.
+                </P>
+                <InteractiveChecklist
+                  title="Signs I was already hopelessly hooked"
+                  items={[
+                    "Checking my phone every 30 seconds for your notification",
+                    "Laughing out loud in public like a crazy person",
+                    "Ignoring my sleep schedule because talking to you was better"
+                  ]}
+                />
+                <StickyNote color="pink" rotation={-1.5} className="text-center">
+                  "You became my favorite notification within 48 hours."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 11
+            <Page key={11} pageNumber={11} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Mid September 2025" location="Everywhere I walked" mood="Constantly smiling at my screen" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P>
+                      Suddenly, in September 2025, the boy who never gave his time to anyone was checking his phone every 30 seconds.
+                    </P>
+                    <P>
+                      My entire day revolved around when you would text. Walking to class, eating lunch, sitting in my room — everything felt brighter because you were in my notifications.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/her/h2.jpg"
+                    caption="the girl in my head 24/7"
+                    date="Sept 2025"
+                    backNote="I was completely hopelessly smitten by this week. You had completely conquered my schedule."
+                    rotation={2}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  I used to guard my peace so aggressively, but with you, I wanted you in every single corner of my day.
+                </P>
+                <LoveMeter caption="Yash's addiction to talking to Tannu:" />
+                <PeelWaxSeal
+                  title="Private thought from this week"
+                  secret="My roommate asked me why I kept smiling at my phone like an idiot. I didn't want to admit that a girl had completely taken over my brain."
+                />
+                <MarginNote color="ink" rotation={-2} className="text-right">
+                  — you owned my attention from day one ♡
+                </MarginNote>
+              </div>
+
+            </Page>,
+// PAGE 12
+            <Page key={12} pageNumber={12} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="18th September 2025" location="Midnight call" mood="Soft, tender, defenseless" />
+                <div className="flex items-start gap-2">
+                  <FlipPolaroid
+                    src="/assets/her/h3.jpg"
+                    caption="when banter turned into love"
+                    date="18 Sept 2025"
+                    backNote="Two days before the confession. We both knew something huge was coming."
+                    rotation={-2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <P>
+                      Somewhere between roasting each other and sharing memes, the tone quietly shifted.
+                    </P>
+                    <P>
+                      You started telling me about your day, your little worries, the random thoughts in your head. And I found myself caring so deeply about every single detail.
+                    </P>
+                  </div>
+                </div>
+                <Quote>
+                  "I didn't just want to make you laugh anymore. I wanted to make sure you felt safe with me."
+                </Quote>
+                <P>
+                  That was the turning point. I wasn't just having fun chatting with a cute girl; my heart was quietly packing its bags and moving into yours.
+                </P>
+                <ForeheadKissButton label="Tap to send comfort to Tannu 💋" />
+                <StickyNote color="amber" rotation={1.5} className="text-center">
+                  "I knew right here that I was in deep trouble. Good trouble."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 13
+            <Page key={13} pageNumber={13} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="20th September 2025" location="Late Night / Forever" mood="Heart exploded with joy" />
+                <ChapterHeader number="Chapter Four" title="20th September 2025" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep text-lg">
+                      YOU CONFESSED FIRST, TANNU!
+                    </P>
+                    <P>
+                      Let this digital diary officially etch it into history: <strong>On 20th September 2025, you were the one who spoke first!</strong>
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/her/h4.jpg"
+                    caption="20 Sept 2025: you confessed first"
+                    date="20 Sept 2025"
+                    backNote="The greatest night of 2025. You told me you liked me, and my whole universe shifted into color."
+                    rotation={1.5}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  That late-night conversation on 20th September 2025... my heart was racing so hard against my ribs I thought you could hear it through the phone. When you admitted how you felt, my entire universe clicked into place.
+                </P>
+                <MemoryQuiz
+                  question="Who said I love you / confessed first on 20th September 2025?"
+                  options={["Tannu (100%)", "Tannu (Obviously)", "Tannu (Yash will tease her forever)"]}
+                  reaction="YOU DID! And I will remind you of this every single day until we are 90 years old, my babu!"
+                />
+                <VintageStamp text="20 SEPT 2025 • SACRED CONFESSION" rotation={-3} />
+              </div>
+
+            </Page>,
+// PAGE 14
+            <Page key={14} pageNumber={14} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="21st September 2025" location="Morning After" mood="Smug, giddy, completely in love" />
+                <P className="font-bold text-rose-deep">
+                  I will tease you about this forever.
+                </P>
+                <P>
+                  You tried to act all cool afterward, like: 'Yeah, whatever, I just said it.' But we both knew you had fallen for this boy in 2025!
+                </P>
+                <div className="flex items-center justify-center my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/her/hv2.mp4"
+                    poster="/assets/her/h7.jpg"
+                    caption="you trying not to smile when I tease you"
+                    rotation={1.5}
+                    size="sm"
+                  />
+                </div>
+                <FoldOutNote
+                  teaser="The honest truth about who fell first"
+                  letter="Even though you spoke first, Tannu, the truth is I fell for you weeks before that night. You just had the bravery to say out loud what was already consuming my soul."
+                />
+                <P>
+                  From 20th September 2025 onwards, there was no more 'I' and 'you' in my mind. It was only 'US'.
+                </P>
+                <StickyNote color="pink" rotation={-2} className="text-center">
+                  "You confessed first, but I promise I will love you the longest."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 15
+            <Page key={15} pageNumber={15} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="October 2025" location="Your room / My screen" mood="Blood boiling with possessiveness" />
+                <ChapterHeader number="Chapter Five" title="The First Jealousy" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      And then came the twirl incident.
+                    </P>
+                    <P>
+                      You looked so breathtakingly gorgeous, and then you mentioned someone else or someone looked at you.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/her/h5.jpg"
+                    caption="that stunning twirl & outfit"
+                    date="Oct 2025"
+                    backNote="You twirled in this outfit and looked like a goddess. I instantly wanted to punch any guy who dared look at you."
+                    rotation={-2}
+                    tapeColor="rose"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  Something snapped inside me so violently it scared me. I felt this intense, burning jealousy rush straight to my head.
+                </P>
+                <InteractiveChecklist
+                  title="Yash's internal reaction to other guys looking at you"
+                  items={[
+                    "Blood boiled in 0.5 seconds",
+                    "Acted cool and casual on the outside",
+                    "Internally screamed: 'SHE IS MINE'",
+                    "Realized I was completely, helplessly in love"
+                  ]}
+                />
+                <MarginNote color="red" rotation={-1.5} className="font-bold">
+                  — I never knew I could be that possessive until you.
+                </MarginNote>
+              </div>
+
+            </Page>,
+// PAGE 16
+            <Page key={16} pageNumber={16} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Late October 2025" location="Quiet night" mood="Surrendered & at peace" />
+                <div className="flex items-start gap-2">
+                  <FlipPolaroid
+                    src="/assets/her/h6.jpg"
+                    caption="the girl who owns me completely"
+                    date="Oct 2025"
+                    backNote="The night I surrendered completely. There was no more running from it."
+                    rotation={2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <P>
+                      That jealousy was the ultimate mirror. You don't get that protective or that scared over someone who is just a casual person in your life.
+                    </P>
+                    <P>
+                      You only feel that when you realize your entire heart is in their hands.
+                    </P>
+                  </div>
+                </div>
+                <Quote>
+                  "I looked at myself in the mirror and finally admitted it: I am head-over-heels, irreversibly in love with Tanisha."
+                </Quote>
+                <P>
+                  There was no turning back. I didn't want any exit doors or safety nets. I wanted you, all of you, forever.
+                </P>
+                <PeelWaxSeal
+                  title="Secret from that night"
+                  secret="I wrote in my phone notes that night: 'If anything ever happens between us, I will never love anyone else like this again.' And that is still true today."
+                />
+                <ForeheadKissButton label="Tap to calm possessive Yash 💋" />
+              </div>
+
+            </Page>,
+// PAGE 17
+            <Page key={17} pageNumber={17} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="November 2025" location="Phone Screens" mood="Aching with distance" />
+                <ChapterHeader number="Chapter Six" title="Somewhere Between Us" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      The distance between us was unbearable.
+                    </P>
+                    <P>
+                      Falling in love through glowing screens in late 2025 was the sweetest agony. We spent hours living inside each other's headphones.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/her/h7.jpg"
+                    caption="my favorite screen view"
+                    date="Nov 2025"
+                    backNote="Every time my screen lit up with your face, my whole room felt warm."
+                    rotation={-1.5}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  I memorized the exact cadence of your voice, the way you sigh when you're sleepy, the little hum you make when you're thinking.
+                </P>
+                <MemoryQuiz
+                  question="What was our longest recorded phone call in late 2025?"
+                  options={["3 hours", "6 hours", "Until our phones literally overheated"]}
+                  reaction="Until our phones overheated and our eyes burned, but neither of us wanted to say bye first!"
+                />
+                <StickyNote color="yellow" rotation={1} className="text-center">
+                  "Distance meant so little when you already meant so much."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 18
+            <Page key={18} pageNumber={18} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Late November 2025" location="Bed at 3 AM" mood="Sleepy, soft, whispering" />
+                <P className="font-bold text-rose-deep">
+                  Those 3 AM FaceTime hours &amp; late-night voice notes.
+                </P>
+                <P>
+                  You with your messy bun, cuddled under your blanket, telling me about everything and nothing. I would watch you start nodding off, your eyelids getting heavy.
+                </P>
+                <div className="flex items-center justify-center my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/her/hv3.mp4"
+                    poster="/assets/her/h9.jpg"
+                    caption="your sleepy face on FaceTime"
+                    rotation={1}
+                    size="sm"
+                  />
+                </div>
+                <VoiceNoteSimulator
+                  title="Voice Note from Yash (2:43 AM)"
+                  time="2:18 min"
+                  transcript="Hey babu... you just fell asleep on FaceTime. I'm whispering so I don't wake you up, but you look so peaceful right now. Sleep well my angel. I love you so much."
+                />
+                <LoveMeter caption="How pretty Tannu looks when sleepy:" />
+              </div>
+
+            </Page>,
+// PAGE 19
+            <Page key={19} pageNumber={19} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="December 2025" location="Counting Days" mood="Impatience & butterflies" />
+                <div className="flex items-start gap-2">
+                  <FlipPolaroid
+                    src="/assets/her/h8.jpg"
+                    caption="counting the hours"
+                    date="Dec 2025"
+                    backNote="The days leading up to our first meeting felt like centuries. I couldn't focus on anything."
+                    rotation={-2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <P>
+                      Screens weren't enough anymore. I needed to see you in 3D.
+                    </P>
+                    <P>
+                      I wanted to see your height next to mine, smell your perfume, and feel your hand in mine without a piece of glass between us.
+                    </P>
+                  </div>
+                </div>
+                <InteractiveChecklist
+                  title="Yash's nervous preparation before meeting in Dec 2025"
+                  items={[
+                    "Ironed three different shirts",
+                    "Overthought what my first sentence would be",
+                    "Heart rate: steady 150 bpm all day",
+                    "Prayed you wouldn't find me awkward in person"
+                  ]}
+                />
+                <PeelWaxSeal
+                  title="What terrified me most before our first date"
+                  secret="I was terrified that in real life, you wouldn't feel the same spark. But the second I saw you walk up, all my fear vanished."
+                />
+                <VintageStamp text="FIRST MEETING PENDING" rotation={-2} />
+              </div>
+
+            </Page>,
+// PAGE 20
+            <Page key={20} pageNumber={20} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Winter 2025" location="Delhi / First Meeting" mood="World stopped spinning" />
+                <ChapterHeader number="Chapter Seven" title="And Then We Met" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u1.jpg"
+                    caption="our very first meeting"
+                    date="Winter 2025"
+                    backNote="The second you walked up, I literally forgot how to speak proper English for five minutes."
+                    rotation={-1.5}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u2.jpg"
+                    caption="standing next to you at last"
+                    date="Winter 2025"
+                    backNote="Finally together in the real world. You fit perfectly right next to my shoulder."
+                    rotation={2}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  The exact moment you walked toward me in late 2025... I swear the noise of the whole city faded into silence.
+                </P>
+                <P>
+                  You were smaller than I imagined, and so, so beautiful. We gave each other that shy, awkward side hug, and the scent of your hair hit me like heaven.
+                </P>
+                <StickyNote color="pink" rotation={-1.5} className="text-center">
+                  "All my cool-guy arrogance melted into water the second your hand brushed against mine."
+                </StickyNote>
+                <ForeheadKissButton label="Send a first meeting kiss 💋" />
+              </div>
+
+            </Page>,
+// PAGE 21
+            <Page key={21} pageNumber={21} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="December 2025" location="Café Table" mood="Mesmerized by your eyes" />
+                <P className="font-bold text-rose-deep">
+                  Sitting across from you in that café.
+                </P>
+                <P>
+                  You were talking with your hands, looking around, sipping your drink. Every time your eyes locked with mine, both of us would quickly look down and blush like little school kids.
+                </P>
+                <div className="flex items-center justify-center my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/us/uv1.mp4"
+                    poster="/assets/us/u2.jpg"
+                    caption="you looking at me across the table"
+                    rotation={-1}
+                    size="sm"
+                  />
+                </div>
+                <MemoryQuiz
+                  question="What was the cutest awkward moment during our café date?"
+                  options={["Both reaching for the same straw", "Looking away shyly when our eyes met", "Forgetting our own names"]}
+                  reaction="Looking away shyly every time our eyes met! I couldn't look into your eyes for more than 3 seconds without my heart doing backflips."
+                />
+                <MarginNote color="ink" rotation={2} className="text-right">
+                  — the prettiest girl in the entire café ♡
+                </MarginNote>
+              </div>
+
+            </Page>,
+// PAGE 22
+            <Page key={22} pageNumber={22} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Winter 2025" location="Delhi Auto Ride" mood="Electric, golden magic" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u3.jpg"
+                    caption="wind in your hair"
+                    date="Winter 2025"
+                    backNote="The wind was messing up your hair and you were trying to tuck it behind your ears. The most beautiful sight."
+                    rotation={-2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u4.jpg"
+                    caption="sitting so close in that auto"
+                    date="Winter 2025"
+                    backNote="Right before our first kiss. My heart was practically beating out of my chest."
+                    rotation={2}
+                    tapeColor="rose"
+                    size="xs"
+                  />
+                </div>
+                <P className="font-bold text-rose-deep">
+                  The bumpy auto ride through Delhi.
+                </P>
+                <P>
+                  The cold evening wind was blowing your hair everywhere. Sitting packed next to you, our shoulders touching, every bump made us slide closer.
+                </P>
+                <FoldOutNote
+                  teaser="Our very first kiss in that auto"
+                  letter="I gathered all the courage I had, reached out, and held your hand. Then I leaned in... and kissed you. The world outside was honking and rushing, but inside that auto with you, time completely stood still."
+                />
+                <VintageStamp text="FIRST KISS SEALED ♡" rotation={-2} />
+              </div>
+
+            </Page>,
+// PAGE 23
+            <Page key={23} pageNumber={23} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Winter 2025" location="Cold Delhi Pavement" mood="Warmest heart on earth" />
+                <P className="font-bold text-rose-deep">
+                  Your tiny, freezing hand slipped into my pocket.
+                </P>
+                <P>
+                  It was freezing outside. You looked up at me with those big eyes, and without saying a word, slid your cold hand right into my warm jacket pocket. My fingers wrapped around yours.
+                </P>
+                <div className="flex items-center justify-center my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/us/uv2.mp4"
+                    poster="/assets/us/u4.jpg"
+                    caption="walking with our hands locked"
+                    rotation={1}
+                    size="sm"
+                  />
+                </div>
+                <InteractiveChecklist
+                  title="Things I promised myself in that jacket pocket"
+                  items={[
+                    "Never let go of this girl's hand",
+                    "Keep her warm through every single winter of our lives",
+                    "Be the shelter she can always run to"
+                  ]}
+                />
+                <StickyNote color="pink" rotation={-1.5} className="text-center">
+                  "My jacket pocket was made for your hand."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 24
+            <Page key={24} pageNumber={24} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Midnight Farewell" location="By the Curb" mood="Never wanted the night to end" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u5.jpg"
+                    caption="walking under streetlights"
+                    date="Winter 2025"
+                    backNote="We took tiny steps just to stretch out the minutes together."
+                    rotation={-2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u6.jpg"
+                    caption="the tightest goodbye hug"
+                    date="Winter 2025"
+                    backNote="That hug lasted so long the cab driver had to honk. I didn't care."
+                    rotation={1.5}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  We walked so slowly because neither of us wanted to say goodbye. When we reached the drop-off, we stood there for ten whole minutes, holding each other like letting go was impossible.
+                </P>
+                <PeelWaxSeal
+                  title="What I felt on the cab ride back home"
+                  secret="I was still smelling your perfume on my collar. I felt like I was floating two feet off the ground. I couldn't stop grinning the entire ride home."
+                />
+                <ForeheadKissButton label="Send a goodbye kiss 💋" />
+              </div>
+
+            </Page>,
+// PAGE 25
+            <Page key={25} pageNumber={25} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="15th February 2026" location="Our Sacred Date" mood="Eternity started here" />
+                <ChapterHeader number="Chapter 7.5" title="15th February 2026" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep text-lg">
+                      15TH FEBRUARY 2026.
+                    </P>
+                    <P>
+                      Some dates are just numbers printed on a calendar. But 15th February 2026 is carved in pure gold into my soul.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/us/u7.jpg"
+                    caption="15th Feb 2026: our sacred day"
+                    date="15 Feb 2026"
+                    backNote="15th February 2026. The milestone that locked our fates together forever."
+                    rotation={2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  The day we looked each other in the eyes and knew this wasn't temporary. This wasn't a passing phase. We were choosing each other for life.
+                </P>
+                <MemoryQuiz
+                  question="Why is 15th February 2026 our most sacred milestone?"
+                  options={["It's our official forever date", "The promises we made to each other", "All of the above (1000x)"]}
+                  reaction="ALL OF THE ABOVE! It is the anchor of our whole story, Tannu. I celebrate you on the 15th of every single month."
+                />
+                <VintageStamp text="15 FEB 2026 • SACRED MILESTONE" rotation={-3} />
+              </div>
+
+            </Page>,
+// PAGE 26
+            <Page key={26} pageNumber={26} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="15th Feb 2026 Forever" location="In Our Hearts" mood="Deep devotion" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u8.jpg"
+                    caption="together on 15th Feb 2026"
+                    date="15 Feb 2026"
+                    backNote="Look at us here. Two clumsy kids who found everything they ever wanted in each other."
+                    rotation={-1.5}
+                    tapeColor="rose"
+                    size="xs"
+                  />
+                  <AutoplayFilmFrame
+                    src="/assets/us/uv3.mp4"
+                    poster="/assets/us/u8.jpg"
+                    caption="our 15th Feb laughter"
+                    rotation={1.5}
+                    size="xs"
+                  />
+                </div>
+                <Quote>
+                  "On 15th February 2026, I promised you my honesty, my loyalty, my patience, and every ounce of my heart."
+                </Quote>
+                <FoldOutNote
+                  teaser="The unspoken vow from 15th February"
+                  letter="I swore to God and to myself that whatever life throws at us — whether we are laughing on a beach or crying during a storm — you will never face this world alone again. As long as I have breath in my lungs, you are protected and loved."
+                />
+                <ForeheadKissButton label="Seal our 15th Feb vow 💋" />
+              </div>
+
+            </Page>,
+// PAGE 27
+            <Page key={27} pageNumber={27} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Daily Life 2026" location="With You" mood="Adoring every quirk" />
+                <ChapterHeader number="Chapter Eight" title="The Real Tannu" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      The world sees you all dressed up and polite.
+                    </P>
+                    <P>
+                      But I get to see the real, unfiltered Tannu. The goofy, sleepy, dramatic, sweetest baby who exists behind closed doors.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/her/h9.jpg"
+                    caption="my raw cute baby"
+                    date="2026 daily life"
+                    backNote="No makeup, hair in a messy bun, laughing at my dumb joke. This is my favorite version of you."
+                    rotation={-1.5}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  The little faces you make when you're thinking, the way your eyebrows knit together when you're focused, how you pout when you want attention.
+                </P>
+                <PeelWaxSeal
+                  title="My favorite thing about the real you"
+                  secret="Your absolute authenticity. You don't try to impress anyone; you are 100% pure-hearted, raw, and completely genuine."
+                />
+                <StickyNote color="pink" rotation={1.5} className="text-center">
+                  "You are most beautiful to me when you're just being completely yourself."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 28
+            <Page key={28} pageNumber={28} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Cozy Afternoons 2026" location="My Wardrobe / Your Home" mood="Warmest aesthetic" />
+                <div className="flex items-start gap-2">
+                  <FlipPolaroid
+                    src="/assets/her/h10.jpg"
+                    caption="drowning in my hoodie"
+                    date="2026"
+                    backNote="You put this on and declared it was yours now. I never got it back."
+                    rotation={2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      You stealing all my clothes.
+                    </P>
+                    <P>
+                      You put on my oversized hoodie, the sleeves completely covering your hands, you swimming inside it smelling like your vanilla perfume.
+                    </P>
+                  </div>
+                </div>
+                <InteractiveChecklist
+                  title="Tannu's official wardrobe theft record"
+                  items={[
+                    "My favorite oversized black hoodie",
+                    "My warm grey sweatshirt",
+                    "Half of my clean oversized t-shirts",
+                    "My entire heart (irreversible theft)"
+                  ]}
+                />
+                <LoveCoupon
+                  id="001"
+                  title="Midnight Ice Cream & Drive Pass"
+                  benefit="Redeemable anytime Tannu has a sweet craving or needs late-night fresh air. Yash drives and pays."
+                />
+              </div>
+
+            </Page>,
+// PAGE 29
+            <Page key={29} pageNumber={29} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Food Cravings 2026" location="Kitchen / Zomato" mood="Entertained by your demands" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      Your funny food obsessions.
+                    </P>
+                    <P>
+                      Your love for capsicum! The sudden 11 PM cravings for something very specific, and the grumpy baby face you make when you're hungry.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/her/h11.jpg"
+                    caption="hungry and dramatic ♡"
+                    date="2026 food diaries"
+                    backNote="Five minutes after this photo, her food arrived and she smiled like sunshine again."
+                    rotation={-2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                </div>
+                <MemoryQuiz
+                  question="What happens when Tannu gets hangry?"
+                  options={["She turns into a tiny angry demon", "She pouts until fed", "Both (and Yash loves it)"]}
+                  reaction="Both! And the absolute best feeling in the world is feeding my angry baby her favorite food and seeing that bright smile return."
+                />
+                <VintageStamp text="OFFICIAL CHEF FOR TANNU" rotation={-3} />
+              </div>
+
+            </Page>,
+// PAGE 30
+            <Page key={30} pageNumber={30} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Late Night Cuddles 2026" location="Safe & Sound" mood="Don't move a single muscle" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/her/h12.jpg"
+                    caption="sleepy cuddles"
+                    date="2026"
+                    backNote="My arm went completely numb 20 minutes ago. Still didn't move an inch."
+                    rotation={-1.5}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/her/h13.jpg"
+                    caption="peaceful angel"
+                    date="2026"
+                    backNote="The purest soul on this planet. Protected by me always."
+                    rotation={2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  When you fall asleep with your head on my shoulder or arm. My arm loses all blood circulation and goes completely numb, but I refuse to move an inch because you look so peaceful.
+                </P>
+                <LoveCoupon
+                  id="002"
+                  title="100 Forehead Kisses & Head Massages"
+                  benefit="To be redeemed on stressful days, tired evenings, or whenever Tannu needs unconditional pampering."
+                />
+                <ForeheadKissButton label="Give sleeping Tannu a forehead kiss 💋" />
+              </div>
+
+            </Page>,
+// PAGE 31
+            <Page key={31} pageNumber={31} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Every Single Day 2026" location="Everywhere" mood="Noticing every little thing" />
+                <ChapterHeader number="Chapter Nine" title="The Little Things" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u9.jpg"
+                    caption="stolen quiet moment"
+                    date="2026"
+                    backNote="Just holding you by the window on a random quiet afternoon."
+                    rotation={-2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u10.jpg"
+                    caption="your smile at me"
+                    date="2026"
+                    backNote="You looked up at me right here and my heart melted into a puddle."
+                    rotation={1.5}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                {/* Infographic: Love in Numbers */}
+                <div className="p-2 rounded-xs bg-[#fffef5] border border-amber-900/15 shadow-2xs font-handwriting text-center select-none">
+                  <span className="text-[12px] uppercase text-rose-deep font-bold tracking-wider">📊 OUR LOVE IN NUMBERS</span>
+                  <div className="grid grid-cols-3 gap-1 mt-1 text-[13px] text-[#2c1d18]">
+                    <div className="bg-rose-50 p-1 rounded-xs"><strong className="text-rose-deep block text-sm">15th Feb</strong>Sacred Date</div>
+                    <div className="bg-amber-50 p-1 rounded-xs"><strong className="text-amber-900 block text-sm">50,000+</strong>Texts Exchanged</div>
+                    <div className="bg-rose-50 p-1 rounded-xs"><strong className="text-rose-deep block text-sm">0.000%</strong>Chance I'll Leave</div>
+                  </div>
+                </div>
+                <StickyNote color="amber" rotation={-1.5} className="text-center">
+                  "In a world obsessed with big things, you made me fall in love with the quiet, ordinary seconds."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 32
+            <Page key={32} pageNumber={32} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Mirror Moments 2026" location="Elevators & Hallways" mood="Holding you tight" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u11.jpg"
+                    caption="our elevator mirror hugs"
+                    date="2026"
+                    backNote="Every elevator ride is an excuse to wrap both arms around you."
+                    rotation={-1.5}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                  <AutoplayFilmFrame
+                    src="/assets/us/uv4.mp4"
+                    poster="/assets/us/u11.jpg"
+                    caption="us holding each other"
+                    rotation={2}
+                    size="xs"
+                  />
+                </div>
+                <P className="font-bold text-rose-deep">
+                  Every mirror is an excuse to hug you.
+                </P>
+                <P>
+                  Every elevator mirror, hallway reflection, or fitting room mirror — I always pull you into my arms from behind, tuck my chin onto your shoulder, and snap a photo.
+                </P>
+                <PeelWaxSeal
+                  title="What I think every time I see our reflection"
+                  secret="I look at us and genuinely wonder: 'What good karma did I do in my past life to deserve a girl this precious in my arms?'"
+                />
+                <MarginNote color="ink" rotation={-1} className="text-right">
+                  — forever wrapped around you ♡
+                </MarginNote>
+              </div>
+
+            </Page>,
+// PAGE 33
+            <Page key={33} pageNumber={33} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Pure Bakchodi 2026" location="Everywhere We Go" mood="Pure chaos & laughter" />
+                <ChapterHeader number="Chapter Ten" title="Stupid Little Moments" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u12.jpg"
+                    caption="our dumb faces"
+                    date="2026"
+                    backNote="We literally make faces like this in fancy restaurants. Zero regrets."
+                    rotation={-2}
+                    tapeColor="rose"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u13.jpg"
+                    caption="laughing uncontrollably"
+                    date="2026"
+                    backNote="I was laughing so hard my stomach cramped. You are the funniest person I know."
+                    rotation={2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  The stupid inside jokes nobody else would ever understand. Making silly accents, mocking each other, doing random bakchodi in public where people look at us like we're insane.
+                </P>
+                <LoveCoupon
+                  id="003"
+                  title="The 'Tannu Wins The Argument' Pass"
+                  benefit="Can be presented at any moment during a playful disagreement. Yash must immediately say: 'You are right, babu.'"
+                />
+                <StickyNote color="pink" rotation={-1} className="text-center">
+                  "Life is serious enough. With you, it is pure comedy and joy."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 34
+            <Page key={34} pageNumber={34} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Road Trip Era 2026" location="In the Car" mood="Fighting for the aux cord" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/us/uv5.mp4"
+                    poster="/assets/us/u14.jpg"
+                    caption="screaming song lyrics"
+                    rotation={-1.5}
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u14.jpg"
+                    caption="stealing my fries"
+                    date="2026"
+                    backNote="'I don't want anything to eat' ... and then this happened."
+                    rotation={2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                </div>
+                <P className="font-bold text-rose-deep">
+                  'I am not hungry,' she said.
+                </P>
+                <P>
+                  And then proceeded to eat 80% of my fries! Fighting over the aux cord, screaming romantic songs off-key at the top of our lungs with the windows down.
+                </P>
+                <InteractiveChecklist
+                  title="Rules of our drives"
+                  items={[
+                    "Tannu is the resident DJ (even when songs are questionable)",
+                    "My food belongs to Tannu",
+                    "Tannu's food belongs strictly to Tannu",
+                    "Hand-holding is mandatory on the gear shift"
+                  ]}
+                />
+                <ForeheadKissButton label="Send a road trip kiss 💋" />
+              </div>
+
+            </Page>,
+// PAGE 35
+            <Page key={35} pageNumber={35} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="The Living Reel 2026" location="Our Vault" mood="100% raw & real" />
+                <ChapterHeader number="Chapter 10.5" title="Us, Unfiltered" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/unfiltered/unfiltered_1.mp4"
+                    poster="/assets/us/u15.jpg"
+                    caption="reel frame 1"
+                    rotation={-1.5}
+                    size="xs"
+                  />
+                  <AutoplayFilmFrame
+                    src="/assets/unfiltered/unfiltered_2.mp4"
+                    poster="/assets/us/u16.jpg"
+                    caption="reel frame 2"
+                    rotation={2}
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  These clips aren't curated for social media. These are our real, goofy, beautiful moments together.
+                </P>
+                <PeelWaxSeal
+                  title="Why these videos are my favorite"
+                  secret="Because in these videos, there is zero pretense. It is just you and me being completely goofy, safe, and happy in our own little universe."
+                />
+                <div className="text-center pt-1">
+                  <VintageStamp text="100% RAW & UNFILTERED" rotation={-2} />
+                </div>
+              </div>
+
+            </Page>,
+// PAGE 36
+            <Page key={36} pageNumber={36} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Late Night Thoughts 2026" location="Under the Stars" mood="Vulnerable & deeply grateful" />
+                <ChapterHeader number="Chapter Eleven" title="Things I Don't Say Enough" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/us/u15.jpg"
+                    caption="holding your hand forever"
+                    date="2026"
+                    backNote="I hold your hand in public because I want the whole world to know you are mine."
+                    rotation={-1.5}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u16.jpg"
+                    caption="your warmth beside me"
+                    date="2026"
+                    backNote="Every time you lean your head on my shoulder, all my stress disappears."
+                    rotation={2}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  I know I am not always the best at expressing everything out loud, Tannu. But I want you to know how deeply proud I am of the woman you are.
+                </P>
+                <FoldOutNote
+                  teaser="A letter of appreciation for my girl"
+                  letter="You handle so much in your life with so much quiet grace. You work hard, you care for the people around you, and you have the purest, softest heart. Loving you has made me want to be the best version of myself."
+                />
+                <StickyNote color="pink" rotation={-1.5} className="text-center">
+                  "You make this world so much softer just by being in it."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 37
+            <Page key={37} pageNumber={37} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="When Life Gets Heavy" location="My Anchor" mood="Calmed by your touch" />
+                <div className="flex items-start gap-2">
+                  <FlipPolaroid
+                    src="/assets/us/u17.jpg"
+                    caption="my safe harbor"
+                    date="2026"
+                    backNote="You are my safe harbor. No matter what happens outside, here with you I am at peace."
+                    rotation={-2}
+                    tapeColor="cream"
+                    size="xs"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      You are the calm in my storm.
+                    </P>
+                    <P>
+                      Whenever my thoughts get loud, whenever anxiety hits me, all I need is for you to put your hand on my chest or hold my cheek.
+                    </P>
+                  </div>
+                </div>
+                <Quote>
+                  "Your touch can silence a hurricane in my head in two seconds."
+                </Quote>
+                <LoveMeter caption="How much peace Tannu brings me:" />
+                <ForeheadKissButton label="Send a kiss to your anchor 💋" />
+              </div>
+
+            </Page>,
+// PAGE 38
+            <Page key={38} pageNumber={38} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Through the Storms" location="Kitchen Floor / Long Hugs" mood="Choosing each other every time" />
+                <ChapterHeader number="Chapter Twelve" title="Not-So-Perfect Parts" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      We are not a fairytale.
+                    </P>
+                    <P>
+                      We have had misunderstandings. We have argued, we have cried, we have sat in painful silence.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/us/u18.jpg"
+                    caption="after the rain comes warmth"
+                    date="2026"
+                    backNote="We fought for an hour, cried, and then held each other for two hours. We are unbreakable."
+                    rotation={2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  But what makes us sacred is that neither of us ever walks away. We always end up in that tight kitchen hug, whispering apologies and holding each other like our lives depend on it.
+                </P>
+                <InteractiveChecklist
+                  title="Our non-negotiable fight rules"
+                  items={[
+                    "Never go to sleep without resolving it",
+                    "Always hold hands even when we are mad",
+                    "Apologize first because love is bigger than pride",
+                    "Always choose each other at the end of the day"
+                  ]}
+                />
+                <MarginNote color="red" rotation={-1} className="font-bold">
+                  — storms don't break us, they bind us tighter ♡
+                </MarginNote>
+              </div>
+
+            </Page>,
+// PAGE 39
+            <Page key={39} pageNumber={39} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Future Dreams" location="Our Future Home" mood="Dreaming of forever with you" />
+                <ChapterHeader number="Chapter Thirteen" title="The Life I Imagine" />
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <P className="font-bold text-rose-deep">
+                      When I close my eyes and imagine the future...
+                    </P>
+                    <P>
+                      It is never just me. It is always you beside me.
+                    </P>
+                  </div>
+                  <FlipPolaroid
+                    src="/assets/us/u19.jpg"
+                    caption="my forever person"
+                    date="2026 & forever"
+                    backNote="My future wife, my best friend, my soulmate. I see you in all my tomorrows."
+                    rotation={-1.5}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  A warm little apartment filled with plants, sunlight streaming through sheer curtains, waking up to your messy hair, making tea for you in the morning, and kissing your sleepy forehead.
+                </P>
+                <MemoryQuiz
+                  question="What is the first thing we will buy for our future place?"
+                  options={["A giant comfortable couch", "A cute puppy", "Plants that Tannu promises to water"]}
+                  reaction="A puppy and that giant couch where we can binge-watch shows with you curled up on my chest!"
+                />
+                <StickyNote color="amber" rotation={1.5} className="text-center">
+                  "Building a lifetime with you is the only dream I care about."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 40
+            <Page key={40} pageNumber={40} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="Bucket List" location="Santorini & Mountains" mood="Counting the sunsets we'll see" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/unfiltered/unfiltered_5.mp4"
+                    poster="/assets/us/u17.jpg"
+                    caption="travel memories 1"
+                    rotation={-1.5}
+                    size="xs"
+                  />
+                  <AutoplayFilmFrame
+                    src="/assets/unfiltered/unfiltered_6.mp4"
+                    poster="/assets/us/u18.jpg"
+                    caption="travel memories 2"
+                    rotation={2}
+                    size="xs"
+                  />
+                </div>
+                <P className="font-bold text-rose-deep">
+                  We are going to see the world together.
+                </P>
+                <P>
+                  Standing on the cliffs of Santorini watching the sun melt into the Mediterranean. Clumsily dancing together in our kitchen while dinner burns on the stove.
+                </P>
+                <FoldOutNote
+                  teaser="A promise for all our tomorrows"
+                  letter="I promise to show you all the places you've dreamed of visiting. We will collect sunsets across the world, hand in hand, step by step."
+                />
+                <VintageStamp text="FOREVER COMMITTED" rotation={-2} />
+              </div>
+
+            </Page>,
+// PAGE 41
+            <Page key={41} pageNumber={41} totalPages={totalPages}>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="A Thousand Lifetimes" location="The Cosmos" mood="In every universe, it's you" />
+                <ChapterHeader number="Chapter Fourteen" title="If I Could Go Back" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <AutoplayFilmFrame
+                    src="/assets/unfiltered/unfiltered_9.mp4"
+                    poster="/assets/us/u19.jpg"
+                    caption="timeless us 1"
+                    rotation={-2}
+                    size="xs"
+                  />
+                  <AutoplayFilmFrame
+                    src="/assets/unfiltered/unfiltered_10.mp4"
+                    poster="/assets/her/h1.jpg"
+                    caption="timeless us 2"
+                    rotation={1.5}
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  If someone gave me a time machine and allowed me to live a thousand different lives in a thousand different realities...
+                </P>
+                <Quote>
+                  "I would search for you in every single universe, and I would choose you every single time."
+                </Quote>
+                <GoldenScratchCard
+                  prompt="Tap to scratch the eternal promise ticket ✨"
+                  hiddenMessage="In every lifetime, in every universe, I would find you faster, hold you sooner, and love you even deeper than I do today."
+                />
+                <ForeheadKissButton label="Send a lifetime kiss 💋" />
+              </div>
+
+            </Page>,
+// PAGE 42
+            <Page key={42} pageNumber={42} totalPages={totalPages} warm>
+
+              <div className="space-y-1.5">
+                <DiaryHeader date="2026: Full Circle" location="Present Day" mood="Completely transformed by love" />
+                <ChapterHeader number="Chapter Fifteen" title="The Boy After You" />
+                <div className="flex items-center justify-around gap-2 my-1">
+                  <FlipPolaroid
+                    src="/assets/yash/yash_before.jpg"
+                    caption="2024: the lonely boy before"
+                    date="pre-2025"
+                    backNote="The boy who thought he was too cool to feel anything."
+                    rotation={-2}
+                    tapeColor="gold"
+                    size="xs"
+                  />
+                  <FlipPolaroid
+                    src="/assets/us/u19.jpg"
+                    caption="2026: the boy you softened"
+                    date="2026"
+                    backNote="The boy whose entire happiness resides in your smile."
+                    rotation={2}
+                    tapeColor="pink"
+                    size="xs"
+                  />
+                </div>
+                <P>
+                  Look at the boy on Page 3 and look at the boy sitting here today writing this for you.
+                </P>
+                <P>
+                  The careless, selfish boy is gone. You taught me how to care, how to feel, how to be patient, and how to love with everything I have.
+                </P>
+                <InteractiveChecklist
+                  title="What Tannu did to Yash"
+                  items={[
+                    "Taught him what home feels like",
+                    "Softened every sharp edge of his heart",
+                    "Made him believe in true soulmates",
+                    "Became the center of his entire universe"
+                  ]}
+                />
+                <StickyNote color="pink" rotation={-1.5} className="text-center font-bold">
+                  "I am who I am today because you loved me."
+                </StickyNote>
+              </div>
+
+            </Page>,
+// PAGE 43
+            <Page key={43} pageNumber={43} totalPages={totalPages}>
+
+              <div className="space-y-1.5 text-center">
+                <DiaryHeader date="TODAY" location="Our Sacred Space" mood="Celebrating my favorite human" />
+                <span className="font-handwriting text-[13px] uppercase text-rose-deep font-bold tracking-widest">CHAPTER FINALE</span>
+                <h3 className="font-handwriting text-3xl font-bold text-rose-deep drop-shadow-xs">Happy Birthday, My Tannu ♡</h3>
+                <div className="w-16 h-0.5 bg-amber-900/20 mx-auto my-0.5" />
+                <P className="italic text-[#2c1d18]">
+                  Happy Birthday to the girl who holds my entire world in her hands. Today is about celebrating the day the universe gave me my greatest blessing.
+                </P>
+
+                {/* Interactive Candle Blowing Cake */}
+                <InteractiveBirthdayCake onOpenLetter={onOpenLetter} />
+
+                <ForeheadKissButton label="Send 100 Birthday Forehead Kisses 💋" />
+              </div>
+
+            </Page>,
+// PAGE 44
+            <Page key={44} pageNumber={44} totalPages={totalPages} warm>
+
+              <div className="h-full flex flex-col justify-between items-center text-center py-2">
+                <DiaryHeader date="Forever and Always" location="Our Journey" mood="Just the beginning" />
+                <div className="my-auto space-y-2 max-w-[270px]">
+                  <div className="w-12 h-12 rounded-full border-2 border-rose-deep/40 flex items-center justify-center mx-auto text-xl shadow-xs">
+                    💌
+                  </div>
+                  <div className="font-handwriting text-2xl font-bold text-rose-deep">
+                    The End of This Diary.
+                  </div>
+                  <div className="font-handwriting text-xl text-[#3d2721] font-semibold">
+                    The Beginning of Our Forever.
+                  </div>
+                  <P className="italic text-sm text-[#4a2e25]">
+                    "I love you, Tanisha Jha. More than yesterday, and less than tomorrow."
+                  </P>
+                  <VintageStamp text="YASH ♡ TANNU • TO INFINITY" rotation={-2} />
+                </div>
+                <div className="space-y-1 w-full max-w-[250px]">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCloseDiary();
+                    }}
+                    className="w-full py-1.5 px-3 rounded-full bg-amber-900/10 hover:bg-amber-900/20 active:scale-95 text-[#3d2721] font-handwriting text-sm font-bold border border-amber-900/20 shadow-2xs cursor-pointer transition-all"
+                  >
+                    Close Diary ♡ (Keep in my heart)
+                  </button>
+                </div>
+              </div>
+
+            </Page>,
+
+  ];
 
   if (isClosing) {
     return (
@@ -888,7 +2578,24 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
           )}
         </div>
 
-        <div className="relative w-full flex justify-center items-center">
+        {/* MOBILE VIEW (Screen < 768px): Natural-height scrollable book page with smooth 3D page flip transition */}
+        <div className="md:hidden w-full max-w-[440px] mx-auto px-1 sm:px-2">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={_currentPage}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.28, ease: 'easeOut' }}
+              className="w-full shadow-2xl rounded-sm"
+            >
+              {allPages[_currentPage]}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* DESKTOP VIEW (Screen >= 768px): Classic dual-page hardcover flipbook */}
+        <div className="hidden md:flex relative w-full justify-center items-center">
           {/* Left Click Turn Overlay for desktop hover */}
           <div onClick={prevFlip} className="hidden sm:flex absolute left-0 top-0 bottom-0 w-8 sm:w-14 z-20 cursor-pointer items-center opacity-0 hover:opacity-100 transition-opacity">
             <div className="p-1.5 sm:p-2 rounded-r-full bg-[#fbf6ec]/90 border border-amber-900/20 text-rose-deep shadow">
@@ -905,1714 +2612,21 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
           {/* @ts-expect-error – react-pageflip library types */}
           <HTMLFlipBook
             ref={flipBookRef}
-            width={360} height={535} size="stretch"
-            minWidth={280} maxWidth={460}
-            minHeight={420} maxHeight={630}
+            width={380} height={580} size="stretch"
+            minWidth={320} maxWidth={520}
+            minHeight={460} maxHeight={720}
             maxShadowOpacity={0.3}
             showCover={false}
             mobileScrollSupport={true}
             disableFlipByClick={false}
             clickEventForward={true}
-            useMouseEvents={false}
-            usePortrait={true}
-            startPage={0}
+            useMouseEvents={true}
+            usePortrait={false}
+            startPage={_currentPage}
             onFlip={handlePageFlip}
             className="shadow-2xl mx-auto"
           >
-
-            {/* PAGE 1 */}
-            <Page pageNumber={1} totalPages={totalPages}>
-
-              <div className="h-full flex flex-col justify-between text-center py-1">
-                <div className="flex justify-between w-full opacity-60">
-                  <TulipSVG size={26} color="#8b263e" />
-                  <LilySVG size={26} color="#ad1457" />
-                </div>
-                <div className="space-y-1.5 my-auto max-w-[280px] mx-auto">
-                  <div className="font-handwriting text-5xl sm:text-6xl font-bold text-rose-deep tracking-tight">US ♡</div>
-                  <div className="w-14 h-0.5 bg-amber-900/25 mx-auto" />
-                  <p className="font-handwriting italic text-[16px] sm:text-[17.5px] text-[#3d2721] leading-snug">
-                    Tannu, this is the true story of how a selfish, careless &amp; narcissistic boy fell completely, hopelessly in love with the kindest, cutest soul on earth.
-                  </p>
-                  <div className="w-10 h-px bg-amber-900/20 mx-auto" />
-                  <Hand className="text-lg text-[#3d2721]">My story, your story, and</Hand>
-                  <p className="font-handwriting text-2xl sm:text-3xl font-bold text-rose-deep tracking-wide">OUR STORY</p>
-                  <div className="font-handwriting italic text-[14px] text-[#4a2e25] space-y-0.5 text-left pl-3 bg-amber-900/[0.04] p-1.5 rounded-xs border-l-2 border-rose-deep/40">
-                    <p>• Started in 2025 &amp; forever expanding.</p>
-                    <p>• Full of our messy ups &amp; downs.</p>
-                    <p>• Just two clumsy kids loving each other.</p>
-                    <p>• Genuinely the best phase of my life.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 w-full max-w-[270px] mx-auto">
-                  <LoveMeter caption="Yash's love for Tannu right now:" />
-                  <ForeheadKissButton label="Tap to send a forehead kiss to Yash 💋" />
-                  <StickyNote color="pink" rotation={1} className="w-full text-center">
-                    Dedicated to my Tannu — tap 'Turn page 💖' below to open my heart to you ♡
-                  </StickyNote>
-                </div>
-              </div>
-
-            </Page>
-
-            {/* PAGE 2 */}
-            <Page pageNumber={2} totalPages={totalPages} warm>
-
-              <div className="space-y-1">
-                <DiaryHeader date="2025 - Forever" location="Our Universe" mood="Grateful for every single second" />
-                <div className="text-center pb-0.5 border-b border-amber-900/20">
-                  <span className="font-handwriting text-[12px] uppercase text-rose-deep font-bold">Chapters of My Heart</span>
-                  <h3 className="font-handwriting text-xl sm:text-2xl font-bold text-ink-dark leading-tight">Index of Our Memories</h3>
-                </div>
-                <P className="italic text-center text-xs sm:text-sm text-amber-950/80 leading-snug">
-                  "Every single page in this diary, Tannu, was handwritten just for you."
-                </P>
-                <div className="space-y-0 font-handwriting text-[12.5px] sm:text-[14px] text-[#3d2a23] pl-2 border-l-2 border-amber-900/20 leading-tight">
-                  <p><strong className="text-rose-deep font-bold">Ch 1 (p. 3):</strong> Who I was before 2025 (The guarded boy)</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 2 (p. 7):</strong> July 2025: When we were strangers</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 3 (p. 9):</strong> Sept 2025: That comedy story I replied to</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 4 (p. 13):</strong> 20th September 2025 (YOU confessed first!)</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 5 (p. 15):</strong> Oct 2025: The twirl &amp; the first jealousy</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 6 (p. 17):</strong> Nov 2025: 3 AM FaceTime hours &amp; screens</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 7 (p. 20):</strong> Winter 2025: Café table &amp; auto ride first kiss</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 7.5 (p. 25):</strong> 15th February 2026 (Our sacred milestone)</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 8 (p. 27):</strong> 2026: The real, sleepy, capsicum Tannu</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 9 (p. 31):</strong> Stolen polaroids &amp; mirror hugs</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 10 (p. 33):</strong> Our stupid little moments &amp; bakchodi</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 11 (p. 36):</strong> Things I notice about you &amp; never say</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 12 (p. 38):</strong> Fights, storms &amp; kitchen hugs</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 13 (p. 39):</strong> The life I imagine (Santorini dreams)</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 14 (p. 41):</strong> In every lifetime, it will still be you</p>
-                  <p><strong className="text-rose-deep font-bold">Ch 15 (p. 42):</strong> The boy you transformed</p>
-                  <p><strong className="text-rose-deep font-bold">Finale (p. 43):</strong> Happy Birthday to my favorite girl ♡</p>
-                </div>
-                <PeelWaxSeal
-                  title="Yash's secret note before you start reading"
-                  secret="Tannu, 2025 was the year my life truly began. Everything before you was just waiting for you to arrive."
-                />
-              </div>
-
-            </Page>
-
-            {/* PAGE 3 */}
-            <Page pageNumber={3} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="2024 - Early 2025" location="College / Hostel" mood="Cold, detached, pretending to be fine" />
-                <ChapterHeader number="Chapter One" title="The Boy Before You" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      Who was I before you walked into my life, Tannu?
-                    </P>
-                    <P>
-                      To everyone else in 2024, I acted completely nonchalant. Cool, detached, like I never needed anyone to affect me.
-                    </P>
-                    <P>
-                      I convinced myself I didn't care about anything or anyone.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/yash/yash_before.jpg"
-                    caption="me before you"
-                    date="2024 hostel era"
-                    backNote="Look at my face here. So serious, so guarded. I had no idea a girl named Tanisha was about to turn my whole world upside down in 2025."
-                    rotation={2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  I used to sit alone in class, acting like I had it all together, but there was this constant emptiness eating at me. Behind all that swagger, that insecure kid just desperately wanted to be loved.
-                </P>
-                <MemoryQuiz
-                  question="Guess what Yash's routine was before meeting you in 2025?"
-                  options={["Gym & sleep", "Partying nonstop", "Sitting alone pretending to not care"]}
-                  reaction="Sitting alone pretending to not care. Until you came along in 2025 and gave me a reason to care about everything."
-                />
-                <GoldenScratchCard
-                  prompt="Scratch to reveal Yash's hidden confession"
-                  hiddenMessage="I was searching for a home in all the wrong people, not knowing my real home was waiting for me in 2025."
-                />
-              </div>
-
-            </Page>
-
-            {/* PAGE 4 */}
-            <Page pageNumber={4} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Hostel Era 2024" location="Room 204" mood="Restless & guarded" />
-                <div className="flex items-start gap-2">
-                  <FlipPolaroid
-                    src="/assets/yash/yash2.jpg"
-                    caption="the guarded boy"
-                    date="pre-Tannu days"
-                    backNote="I used to think being emotionless was a strength. You proved to me that loving with your whole heart is the bravest thing in the world."
-                    rotation={-2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <P>
-                      I had built these tall, rigid walls around myself. I used humor as a shield and sarcasm as armor so nobody could get close enough to see that I was struggling.
-                    </P>
-                    <P>
-                      I thought that if I never let anyone in, I would never get hurt.
-                    </P>
-                  </div>
-                </div>
-                <Quote>
-                  "I called it being independent. The truth was, I was just terrified of being vulnerable."
-                </Quote>
-                <P>
-                  I was careless with my words and selfish with my time. But then you showed up, and you didn't run away when I was distant. You just stood there with your soft heart and slowly took down every brick I built.
-                </P>
-                <PeelWaxSeal
-                  title="Secret confession about my walls"
-                  secret="Whenever someone tried to get close in the past, I pushed them away. You were the only person whose stubborn warmth broke straight through my defenses."
-                />
-                <MarginNote color="ink" rotation={1} className="text-right">
-                  — you broke through without even trying ♡
-                </MarginNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 5 */}
-            <Page pageNumber={5} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="College 2024" location="Lecture Hall" mood="Lost in my own head" />
-                <P className="font-semibold text-rose-deep">
-                  The deepest insecurity I used to hide:
-                </P>
-                <P>
-                  I wanted to know that my presence actually mattered to someone, and that my absence would actually hurt. I wanted to be someone's first choice.
-                </P>
-                <div className="flex items-center justify-center my-1">
-                  <FlipPolaroid
-                    src="/assets/yash/yash3.jpg"
-                    caption="looking for something real"
-                    backNote="I was wandering through crowds wondering if anyone would ever truly see me. Then you came and looked right into my soul."
-                    rotation={1}
-                    tapeColor="rose"
-                    size="sm"
-                  />
-                </div>
-                <P>
-                  I spent so many nights staring at the ceiling, wondering if anyone would ever look at the real, messy, unpolished version of me and still choose to stay.
-                </P>
-                <InteractiveChecklist
-                  title="Things Yash pretended he didn't care about"
-                  items={[
-                    "Being someone's first choice",
-                    "Receiving sweet goodnight texts",
-                    "Having a real home in another person's arms"
-                  ]}
-                />
-                <StickyNote color="amber" rotation={2} className="text-center">
-                  And then in 2025 the universe gave me you — the one person who makes me feel deeply chosen every single day.
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 6 */}
-            <Page pageNumber={6} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Early 2025" location="Gurugram" mood="Waiting for fate" />
-                <div className="flex items-center justify-around gap-2">
-                  <FlipPolaroid
-                    src="/assets/yash/yash4.jpg"
-                    caption="mirror thoughts"
-                    backNote="The last days of being lonely. You were right around the corner."
-                    rotation={-2}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/yash/yash5.jpg"
-                    caption="alien Yash matching you"
-                    backNote="Look at how goofy I became once you entered my life! You brought out the real kid in me."
-                    rotation={2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  Look at these pictures of me back then. I looked so lost, trying to find purpose in all the wrong places.
-                </P>
-                <P>
-                  I didn't know it yet, but mid-2025 was about to introduce me to Tanisha Jha — the girl who would completely rewrite my destiny.
-                </P>
-                <ForeheadKissButton label="Tap to send comfort to past Yash 💋" />
-                <div className="flex justify-between items-center pt-1 border-t border-amber-900/15">
-                  <VintageStamp text="CHAPTER 1 COMPLETE" rotation={-2} />
-                  <MarginNote color="red" rotation={1}>
-                    2025 starts on next page →
-                  </MarginNote>
-                </div>
-              </div>
-
-            </Page>
-
-            {/* PAGE 7 */}
-            <Page pageNumber={7} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="July 2025" location="New Delhi / Gurugram" mood="Curious about a stranger" />
-                <ChapterHeader number="Chapter Two" title="The Girl I Didn't Know" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      July 2025. And then came Tanisha Jha.
-                    </P>
-                    <P>
-                      I didn't know you existed. I was busy living in my own bubble, completely unaware that someone with your energy, your humor, and your heart was out there.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/her/h1.jpg"
-                    caption="that soft radiant face"
-                    date="July 2025"
-                    backNote="The first time I saw this photo, I literally stared for 5 whole minutes. Unfairly pretty."
-                    rotation={-1.5}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  The first time I saw your pictures, I stopped dead in my tracks. You had this effortless, quiet charm — this warmth that felt like morning sunlight after months of cold rain.
-                </P>
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/her/h13.jpg"
-                    caption="pure sunshine"
-                    date="July 2025"
-                    backNote="Look at that innocent smile. You had no idea what you were doing to my heart."
-                    rotation={2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                  <StickyNote color="pink" rotation={-2} className="w-36 text-center">
-                    "I didn't believe in love at first sight, but you made me second-guess everything in 2025."
-                  </StickyNote>
-                </div>
-                <PeelWaxSeal
-                  title="What went through my head the first second I saw you"
-                  secret="I literally paused and thought: 'Who is this girl and why does her smile feel so familiar, like I've known her forever?'"
-                />
-              </div>
-
-            </Page>
-
-            {/* PAGE 8 */}
-            <Page pageNumber={8} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="August 2025" location="Schmooze App" mood="Awkward silence & suspense" />
-                <P className="font-bold text-rose-deep">
-                  We matched on Schmooze in August 2025.
-                </P>
-                <P>
-                  Out of thousands of people swiping memes, our broken humor matched us together. We exchanged a couple of quick, casual texts... and then came two whole months of complete, dead silence.
-                </P>
-                <div className="flex items-center justify-center gap-2 my-1">
-                  <ConvoScreenshot
-                    src="/assets/convo/ss2.jpg"
-                    caption="our first Schmooze match"
-                    rotation={-1}
-                    className="w-28 sm:w-32"
-                  />
-                  <ConvoScreenshot
-                    src="/assets/convo/ss1.jpg"
-                    caption="the awkward 2-month silence"
-                    rotation={1.5}
-                    className="w-28 sm:w-32"
-                  />
-                </div>
-                <MemoryQuiz
-                  question="Why did we go completely silent for two months?"
-                  options={["Too busy studying", "Both waiting for the other", "Destiny building suspense"]}
-                  reaction="Destiny was definitely building suspense! But honestly, I was just too intimidated by how pretty you were."
-                />
-                <StickyNote color="yellow" rotation={1} className="text-center">
-                  Two months of awkward quiet. We almost became strangers who never happened. But the universe wasn't going to let us slip away in 2025.
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 9 */}
-            <Page pageNumber={9} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Early September 2025" location="Instagram" mood="Taking a leap of faith" />
-                <ChapterHeader number="Chapter Three" title="The Story I Replied To" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P>
-                      Then, one random night in September 2025, you posted a stand-up comedy reel on your Instagram story.
-                    </P>
-                    <P className="font-bold text-rose-deep">
-                      I didn't swipe past. I typed a reply.
-                    </P>
-                  </div>
-                  <ConvoScreenshot
-                    src="/assets/convo/ss3.jpg"
-                    caption="the reply that started it all"
-                    rotation={2}
-                    className="w-28 sm:w-32"
-                  />
-                </div>
-                <P>
-                  That single, ordinary tap on my screen in September 2025 was the best decision of my entire existence. If I had closed the app that night, I would have missed out on my whole world.
-                </P>
-                <FoldOutNote
-                  teaser="What I was doing right before I replied"
-                  letter="I typed, deleted, and re-typed that message three times. I was trying so hard to sound funny and casual, but my hands were literally sweating over an Instagram DM."
-                />
-                <div className="flex justify-between items-center pt-1 border-t border-amber-900/15">
-                  <VintageStamp text="BEST DM OF 2025" rotation={-2} />
-                  <MarginNote color="red" rotation={2}>
-                    and the magic began →
-                  </MarginNote>
-                </div>
-              </div>
-
-            </Page>
-
-            {/* PAGE 10 */}
-            <Page pageNumber={10} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Mid September 2025" location="DMs till 3 AM" mood="Laughing till my ribs hurt" />
-                <P className="font-bold text-rose-deep">
-                  We talked about stand-up comedy for hours.
-                </P>
-                <P>
-                  I realized you had the exact same sarcastic, slightly unhinged humor as me. We tore each other's jokes apart and matched each other line for line.
-                </P>
-                <div className="flex items-center justify-center my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/her/hv1.mp4"
-                    poster="/assets/her/h8.jpg"
-                    caption="your smile while roasting me"
-                    rotation={-1}
-                    size="sm"
-                  />
-                </div>
-                <P>
-                  You weren't like anyone else I'd ever met. You were sharp, funny, and completely unapologetically yourself.
-                </P>
-                <InteractiveChecklist
-                  title="Signs I was already hopelessly hooked"
-                  items={[
-                    "Checking my phone every 30 seconds for your notification",
-                    "Laughing out loud in public like a crazy person",
-                    "Ignoring my sleep schedule because talking to you was better"
-                  ]}
-                />
-                <StickyNote color="pink" rotation={-1.5} className="text-center">
-                  "You became my favorite notification within 48 hours."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 11 */}
-            <Page pageNumber={11} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Mid September 2025" location="Everywhere I walked" mood="Constantly smiling at my screen" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P>
-                      Suddenly, in September 2025, the boy who never gave his time to anyone was checking his phone every 30 seconds.
-                    </P>
-                    <P>
-                      My entire day revolved around when you would text. Walking to class, eating lunch, sitting in my room — everything felt brighter because you were in my notifications.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/her/h2.jpg"
-                    caption="the girl in my head 24/7"
-                    date="Sept 2025"
-                    backNote="I was completely hopelessly smitten by this week. You had completely conquered my schedule."
-                    rotation={2}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  I used to guard my peace so aggressively, but with you, I wanted you in every single corner of my day.
-                </P>
-                <LoveMeter caption="Yash's addiction to talking to Tannu:" />
-                <PeelWaxSeal
-                  title="Private thought from this week"
-                  secret="My roommate asked me why I kept smiling at my phone like an idiot. I didn't want to admit that a girl had completely taken over my brain."
-                />
-                <MarginNote color="ink" rotation={-2} className="text-right">
-                  — you owned my attention from day one ♡
-                </MarginNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 12 */}
-            <Page pageNumber={12} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="18th September 2025" location="Midnight call" mood="Soft, tender, defenseless" />
-                <div className="flex items-start gap-2">
-                  <FlipPolaroid
-                    src="/assets/her/h3.jpg"
-                    caption="when banter turned into love"
-                    date="18 Sept 2025"
-                    backNote="Two days before the confession. We both knew something huge was coming."
-                    rotation={-2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <P>
-                      Somewhere between roasting each other and sharing memes, the tone quietly shifted.
-                    </P>
-                    <P>
-                      You started telling me about your day, your little worries, the random thoughts in your head. And I found myself caring so deeply about every single detail.
-                    </P>
-                  </div>
-                </div>
-                <Quote>
-                  "I didn't just want to make you laugh anymore. I wanted to make sure you felt safe with me."
-                </Quote>
-                <P>
-                  That was the turning point. I wasn't just having fun chatting with a cute girl; my heart was quietly packing its bags and moving into yours.
-                </P>
-                <ForeheadKissButton label="Tap to send comfort to Tannu 💋" />
-                <StickyNote color="amber" rotation={1.5} className="text-center">
-                  "I knew right here that I was in deep trouble. Good trouble."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 13 */}
-            <Page pageNumber={13} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="20th September 2025" location="Late Night / Forever" mood="Heart exploded with joy" />
-                <ChapterHeader number="Chapter Four" title="20th September 2025" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep text-lg">
-                      YOU CONFESSED FIRST, TANNU!
-                    </P>
-                    <P>
-                      Let this digital diary officially etch it into history: <strong>On 20th September 2025, you were the one who spoke first!</strong>
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/her/h4.jpg"
-                    caption="20 Sept 2025: you confessed first"
-                    date="20 Sept 2025"
-                    backNote="The greatest night of 2025. You told me you liked me, and my whole universe shifted into color."
-                    rotation={1.5}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  That late-night conversation on 20th September 2025... my heart was racing so hard against my ribs I thought you could hear it through the phone. When you admitted how you felt, my entire universe clicked into place.
-                </P>
-                <MemoryQuiz
-                  question="Who said I love you / confessed first on 20th September 2025?"
-                  options={["Tannu (100%)", "Tannu (Obviously)", "Tannu (Yash will tease her forever)"]}
-                  reaction="YOU DID! And I will remind you of this every single day until we are 90 years old, my babu!"
-                />
-                <VintageStamp text="20 SEPT 2025 • SACRED CONFESSION" rotation={-3} />
-              </div>
-
-            </Page>
-
-            {/* PAGE 14 */}
-            <Page pageNumber={14} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="21st September 2025" location="Morning After" mood="Smug, giddy, completely in love" />
-                <P className="font-bold text-rose-deep">
-                  I will tease you about this forever.
-                </P>
-                <P>
-                  You tried to act all cool afterward, like: 'Yeah, whatever, I just said it.' But we both knew you had fallen for this boy in 2025!
-                </P>
-                <div className="flex items-center justify-center my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/her/hv2.mp4"
-                    poster="/assets/her/h7.jpg"
-                    caption="you trying not to smile when I tease you"
-                    rotation={1.5}
-                    size="sm"
-                  />
-                </div>
-                <FoldOutNote
-                  teaser="The honest truth about who fell first"
-                  letter="Even though you spoke first, Tannu, the truth is I fell for you weeks before that night. You just had the bravery to say out loud what was already consuming my soul."
-                />
-                <P>
-                  From 20th September 2025 onwards, there was no more 'I' and 'you' in my mind. It was only 'US'.
-                </P>
-                <StickyNote color="pink" rotation={-2} className="text-center">
-                  "You confessed first, but I promise I will love you the longest."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 15 */}
-            <Page pageNumber={15} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="October 2025" location="Your room / My screen" mood="Blood boiling with possessiveness" />
-                <ChapterHeader number="Chapter Five" title="The First Jealousy" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      And then came the twirl incident.
-                    </P>
-                    <P>
-                      You looked so breathtakingly gorgeous, and then you mentioned someone else or someone looked at you.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/her/h5.jpg"
-                    caption="that stunning twirl & outfit"
-                    date="Oct 2025"
-                    backNote="You twirled in this outfit and looked like a goddess. I instantly wanted to punch any guy who dared look at you."
-                    rotation={-2}
-                    tapeColor="rose"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  Something snapped inside me so violently it scared me. I felt this intense, burning jealousy rush straight to my head.
-                </P>
-                <InteractiveChecklist
-                  title="Yash's internal reaction to other guys looking at you"
-                  items={[
-                    "Blood boiled in 0.5 seconds",
-                    "Acted cool and casual on the outside",
-                    "Internally screamed: 'SHE IS MINE'",
-                    "Realized I was completely, helplessly in love"
-                  ]}
-                />
-                <MarginNote color="red" rotation={-1.5} className="font-bold">
-                  — I never knew I could be that possessive until you.
-                </MarginNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 16 */}
-            <Page pageNumber={16} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Late October 2025" location="Quiet night" mood="Surrendered & at peace" />
-                <div className="flex items-start gap-2">
-                  <FlipPolaroid
-                    src="/assets/her/h6.jpg"
-                    caption="the girl who owns me completely"
-                    date="Oct 2025"
-                    backNote="The night I surrendered completely. There was no more running from it."
-                    rotation={2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <P>
-                      That jealousy was the ultimate mirror. You don't get that protective or that scared over someone who is just a casual person in your life.
-                    </P>
-                    <P>
-                      You only feel that when you realize your entire heart is in their hands.
-                    </P>
-                  </div>
-                </div>
-                <Quote>
-                  "I looked at myself in the mirror and finally admitted it: I am head-over-heels, irreversibly in love with Tanisha."
-                </Quote>
-                <P>
-                  There was no turning back. I didn't want any exit doors or safety nets. I wanted you, all of you, forever.
-                </P>
-                <PeelWaxSeal
-                  title="Secret from that night"
-                  secret="I wrote in my phone notes that night: 'If anything ever happens between us, I will never love anyone else like this again.' And that is still true today."
-                />
-                <ForeheadKissButton label="Tap to calm possessive Yash 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 17 */}
-            <Page pageNumber={17} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="November 2025" location="Phone Screens" mood="Aching with distance" />
-                <ChapterHeader number="Chapter Six" title="Somewhere Between Us" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      The distance between us was unbearable.
-                    </P>
-                    <P>
-                      Falling in love through glowing screens in late 2025 was the sweetest agony. We spent hours living inside each other's headphones.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/her/h7.jpg"
-                    caption="my favorite screen view"
-                    date="Nov 2025"
-                    backNote="Every time my screen lit up with your face, my whole room felt warm."
-                    rotation={-1.5}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  I memorized the exact cadence of your voice, the way you sigh when you're sleepy, the little hum you make when you're thinking.
-                </P>
-                <MemoryQuiz
-                  question="What was our longest recorded phone call in late 2025?"
-                  options={["3 hours", "6 hours", "Until our phones literally overheated"]}
-                  reaction="Until our phones overheated and our eyes burned, but neither of us wanted to say bye first!"
-                />
-                <StickyNote color="yellow" rotation={1} className="text-center">
-                  "Distance meant so little when you already meant so much."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 18 */}
-            <Page pageNumber={18} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Late November 2025" location="Bed at 3 AM" mood="Sleepy, soft, whispering" />
-                <P className="font-bold text-rose-deep">
-                  Those 3 AM FaceTime hours &amp; late-night voice notes.
-                </P>
-                <P>
-                  You with your messy bun, cuddled under your blanket, telling me about everything and nothing. I would watch you start nodding off, your eyelids getting heavy.
-                </P>
-                <div className="flex items-center justify-center my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/her/hv3.mp4"
-                    poster="/assets/her/h9.jpg"
-                    caption="your sleepy face on FaceTime"
-                    rotation={1}
-                    size="sm"
-                  />
-                </div>
-                <VoiceNoteSimulator
-                  title="Voice Note from Yash (2:43 AM)"
-                  time="2:18 min"
-                  transcript="Hey babu... you just fell asleep on FaceTime. I'm whispering so I don't wake you up, but you look so peaceful right now. Sleep well my angel. I love you so much."
-                />
-                <LoveMeter caption="How pretty Tannu looks when sleepy:" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 19 */}
-            <Page pageNumber={19} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="December 2025" location="Counting Days" mood="Impatience & butterflies" />
-                <div className="flex items-start gap-2">
-                  <FlipPolaroid
-                    src="/assets/her/h8.jpg"
-                    caption="counting the hours"
-                    date="Dec 2025"
-                    backNote="The days leading up to our first meeting felt like centuries. I couldn't focus on anything."
-                    rotation={-2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <P>
-                      Screens weren't enough anymore. I needed to see you in 3D.
-                    </P>
-                    <P>
-                      I wanted to see your height next to mine, smell your perfume, and feel your hand in mine without a piece of glass between us.
-                    </P>
-                  </div>
-                </div>
-                <InteractiveChecklist
-                  title="Yash's nervous preparation before meeting in Dec 2025"
-                  items={[
-                    "Ironed three different shirts",
-                    "Overthought what my first sentence would be",
-                    "Heart rate: steady 150 bpm all day",
-                    "Prayed you wouldn't find me awkward in person"
-                  ]}
-                />
-                <PeelWaxSeal
-                  title="What terrified me most before our first date"
-                  secret="I was terrified that in real life, you wouldn't feel the same spark. But the second I saw you walk up, all my fear vanished."
-                />
-                <VintageStamp text="FIRST MEETING PENDING" rotation={-2} />
-              </div>
-
-            </Page>
-
-            {/* PAGE 20 */}
-            <Page pageNumber={20} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Winter 2025" location="Delhi / First Meeting" mood="World stopped spinning" />
-                <ChapterHeader number="Chapter Seven" title="And Then We Met" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u1.jpg"
-                    caption="our very first meeting"
-                    date="Winter 2025"
-                    backNote="The second you walked up, I literally forgot how to speak proper English for five minutes."
-                    rotation={-1.5}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u2.jpg"
-                    caption="standing next to you at last"
-                    date="Winter 2025"
-                    backNote="Finally together in the real world. You fit perfectly right next to my shoulder."
-                    rotation={2}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  The exact moment you walked toward me in late 2025... I swear the noise of the whole city faded into silence.
-                </P>
-                <P>
-                  You were smaller than I imagined, and so, so beautiful. We gave each other that shy, awkward side hug, and the scent of your hair hit me like heaven.
-                </P>
-                <StickyNote color="pink" rotation={-1.5} className="text-center">
-                  "All my cool-guy arrogance melted into water the second your hand brushed against mine."
-                </StickyNote>
-                <ForeheadKissButton label="Send a first meeting kiss 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 21 */}
-            <Page pageNumber={21} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="December 2025" location="Café Table" mood="Mesmerized by your eyes" />
-                <P className="font-bold text-rose-deep">
-                  Sitting across from you in that café.
-                </P>
-                <P>
-                  You were talking with your hands, looking around, sipping your drink. Every time your eyes locked with mine, both of us would quickly look down and blush like little school kids.
-                </P>
-                <div className="flex items-center justify-center my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/us/uv1.mp4"
-                    poster="/assets/us/u2.jpg"
-                    caption="you looking at me across the table"
-                    rotation={-1}
-                    size="sm"
-                  />
-                </div>
-                <MemoryQuiz
-                  question="What was the cutest awkward moment during our café date?"
-                  options={["Both reaching for the same straw", "Looking away shyly when our eyes met", "Forgetting our own names"]}
-                  reaction="Looking away shyly every time our eyes met! I couldn't look into your eyes for more than 3 seconds without my heart doing backflips."
-                />
-                <MarginNote color="ink" rotation={2} className="text-right">
-                  — the prettiest girl in the entire café ♡
-                </MarginNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 22 */}
-            <Page pageNumber={22} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Winter 2025" location="Delhi Auto Ride" mood="Electric, golden magic" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u3.jpg"
-                    caption="wind in your hair"
-                    date="Winter 2025"
-                    backNote="The wind was messing up your hair and you were trying to tuck it behind your ears. The most beautiful sight."
-                    rotation={-2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u4.jpg"
-                    caption="sitting so close in that auto"
-                    date="Winter 2025"
-                    backNote="Right before our first kiss. My heart was practically beating out of my chest."
-                    rotation={2}
-                    tapeColor="rose"
-                    size="xs"
-                  />
-                </div>
-                <P className="font-bold text-rose-deep">
-                  The bumpy auto ride through Delhi.
-                </P>
-                <P>
-                  The cold evening wind was blowing your hair everywhere. Sitting packed next to you, our shoulders touching, every bump made us slide closer.
-                </P>
-                <FoldOutNote
-                  teaser="Our very first kiss in that auto"
-                  letter="I gathered all the courage I had, reached out, and held your hand. Then I leaned in... and kissed you. The world outside was honking and rushing, but inside that auto with you, time completely stood still."
-                />
-                <VintageStamp text="FIRST KISS SEALED ♡" rotation={-2} />
-              </div>
-
-            </Page>
-
-            {/* PAGE 23 */}
-            <Page pageNumber={23} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Winter 2025" location="Cold Delhi Pavement" mood="Warmest heart on earth" />
-                <P className="font-bold text-rose-deep">
-                  Your tiny, freezing hand slipped into my pocket.
-                </P>
-                <P>
-                  It was freezing outside. You looked up at me with those big eyes, and without saying a word, slid your cold hand right into my warm jacket pocket. My fingers wrapped around yours.
-                </P>
-                <div className="flex items-center justify-center my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/us/uv2.mp4"
-                    poster="/assets/us/u4.jpg"
-                    caption="walking with our hands locked"
-                    rotation={1}
-                    size="sm"
-                  />
-                </div>
-                <InteractiveChecklist
-                  title="Things I promised myself in that jacket pocket"
-                  items={[
-                    "Never let go of this girl's hand",
-                    "Keep her warm through every single winter of our lives",
-                    "Be the shelter she can always run to"
-                  ]}
-                />
-                <StickyNote color="pink" rotation={-1.5} className="text-center">
-                  "My jacket pocket was made for your hand."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 24 */}
-            <Page pageNumber={24} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Midnight Farewell" location="By the Curb" mood="Never wanted the night to end" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u5.jpg"
-                    caption="walking under streetlights"
-                    date="Winter 2025"
-                    backNote="We took tiny steps just to stretch out the minutes together."
-                    rotation={-2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u6.jpg"
-                    caption="the tightest goodbye hug"
-                    date="Winter 2025"
-                    backNote="That hug lasted so long the cab driver had to honk. I didn't care."
-                    rotation={1.5}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  We walked so slowly because neither of us wanted to say goodbye. When we reached the drop-off, we stood there for ten whole minutes, holding each other like letting go was impossible.
-                </P>
-                <PeelWaxSeal
-                  title="What I felt on the cab ride back home"
-                  secret="I was still smelling your perfume on my collar. I felt like I was floating two feet off the ground. I couldn't stop grinning the entire ride home."
-                />
-                <ForeheadKissButton label="Send a goodbye kiss 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 25 */}
-            <Page pageNumber={25} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="15th February 2026" location="Our Sacred Date" mood="Eternity started here" />
-                <ChapterHeader number="Chapter 7.5" title="15th February 2026" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep text-lg">
-                      15TH FEBRUARY 2026.
-                    </P>
-                    <P>
-                      Some dates are just numbers printed on a calendar. But 15th February 2026 is carved in pure gold into my soul.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/us/u7.jpg"
-                    caption="15th Feb 2026: our sacred day"
-                    date="15 Feb 2026"
-                    backNote="15th February 2026. The milestone that locked our fates together forever."
-                    rotation={2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  The day we looked each other in the eyes and knew this wasn't temporary. This wasn't a passing phase. We were choosing each other for life.
-                </P>
-                <MemoryQuiz
-                  question="Why is 15th February 2026 our most sacred milestone?"
-                  options={["It's our official forever date", "The promises we made to each other", "All of the above (1000x)"]}
-                  reaction="ALL OF THE ABOVE! It is the anchor of our whole story, Tannu. I celebrate you on the 15th of every single month."
-                />
-                <VintageStamp text="15 FEB 2026 • SACRED MILESTONE" rotation={-3} />
-              </div>
-
-            </Page>
-
-            {/* PAGE 26 */}
-            <Page pageNumber={26} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="15th Feb 2026 Forever" location="In Our Hearts" mood="Deep devotion" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u8.jpg"
-                    caption="together on 15th Feb 2026"
-                    date="15 Feb 2026"
-                    backNote="Look at us here. Two clumsy kids who found everything they ever wanted in each other."
-                    rotation={-1.5}
-                    tapeColor="rose"
-                    size="xs"
-                  />
-                  <AutoplayFilmFrame
-                    src="/assets/us/uv3.mp4"
-                    poster="/assets/us/u8.jpg"
-                    caption="our 15th Feb laughter"
-                    rotation={1.5}
-                    size="xs"
-                  />
-                </div>
-                <Quote>
-                  "On 15th February 2026, I promised you my honesty, my loyalty, my patience, and every ounce of my heart."
-                </Quote>
-                <FoldOutNote
-                  teaser="The unspoken vow from 15th February"
-                  letter="I swore to God and to myself that whatever life throws at us — whether we are laughing on a beach or crying during a storm — you will never face this world alone again. As long as I have breath in my lungs, you are protected and loved."
-                />
-                <ForeheadKissButton label="Seal our 15th Feb vow 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 27 */}
-            <Page pageNumber={27} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Daily Life 2026" location="With You" mood="Adoring every quirk" />
-                <ChapterHeader number="Chapter Eight" title="The Real Tannu" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      The world sees you all dressed up and polite.
-                    </P>
-                    <P>
-                      But I get to see the real, unfiltered Tannu. The goofy, sleepy, dramatic, sweetest baby who exists behind closed doors.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/her/h9.jpg"
-                    caption="my raw cute baby"
-                    date="2026 daily life"
-                    backNote="No makeup, hair in a messy bun, laughing at my dumb joke. This is my favorite version of you."
-                    rotation={-1.5}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  The little faces you make when you're thinking, the way your eyebrows knit together when you're focused, how you pout when you want attention.
-                </P>
-                <PeelWaxSeal
-                  title="My favorite thing about the real you"
-                  secret="Your absolute authenticity. You don't try to impress anyone; you are 100% pure-hearted, raw, and completely genuine."
-                />
-                <StickyNote color="pink" rotation={1.5} className="text-center">
-                  "You are most beautiful to me when you're just being completely yourself."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 28 */}
-            <Page pageNumber={28} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Cozy Afternoons 2026" location="My Wardrobe / Your Home" mood="Warmest aesthetic" />
-                <div className="flex items-start gap-2">
-                  <FlipPolaroid
-                    src="/assets/her/h10.jpg"
-                    caption="drowning in my hoodie"
-                    date="2026"
-                    backNote="You put this on and declared it was yours now. I never got it back."
-                    rotation={2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      You stealing all my clothes.
-                    </P>
-                    <P>
-                      You put on my oversized hoodie, the sleeves completely covering your hands, you swimming inside it smelling like your vanilla perfume.
-                    </P>
-                  </div>
-                </div>
-                <InteractiveChecklist
-                  title="Tannu's official wardrobe theft record"
-                  items={[
-                    "My favorite oversized black hoodie",
-                    "My warm grey sweatshirt",
-                    "Half of my clean oversized t-shirts",
-                    "My entire heart (irreversible theft)"
-                  ]}
-                />
-                <LoveCoupon
-                  id="001"
-                  title="Midnight Ice Cream & Drive Pass"
-                  benefit="Redeemable anytime Tannu has a sweet craving or needs late-night fresh air. Yash drives and pays."
-                />
-              </div>
-
-            </Page>
-
-            {/* PAGE 29 */}
-            <Page pageNumber={29} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Food Cravings 2026" location="Kitchen / Zomato" mood="Entertained by your demands" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      Your funny food obsessions.
-                    </P>
-                    <P>
-                      Your love for capsicum! The sudden 11 PM cravings for something very specific, and the grumpy baby face you make when you're hungry.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/her/h11.jpg"
-                    caption="hungry and dramatic ♡"
-                    date="2026 food diaries"
-                    backNote="Five minutes after this photo, her food arrived and she smiled like sunshine again."
-                    rotation={-2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                </div>
-                <MemoryQuiz
-                  question="What happens when Tannu gets hangry?"
-                  options={["She turns into a tiny angry demon", "She pouts until fed", "Both (and Yash loves it)"]}
-                  reaction="Both! And the absolute best feeling in the world is feeding my angry baby her favorite food and seeing that bright smile return."
-                />
-                <VintageStamp text="OFFICIAL CHEF FOR TANNU" rotation={-3} />
-              </div>
-
-            </Page>
-
-            {/* PAGE 30 */}
-            <Page pageNumber={30} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Late Night Cuddles 2026" location="Safe & Sound" mood="Don't move a single muscle" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/her/h12.jpg"
-                    caption="sleepy cuddles"
-                    date="2026"
-                    backNote="My arm went completely numb 20 minutes ago. Still didn't move an inch."
-                    rotation={-1.5}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/her/h13.jpg"
-                    caption="peaceful angel"
-                    date="2026"
-                    backNote="The purest soul on this planet. Protected by me always."
-                    rotation={2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  When you fall asleep with your head on my shoulder or arm. My arm loses all blood circulation and goes completely numb, but I refuse to move an inch because you look so peaceful.
-                </P>
-                <LoveCoupon
-                  id="002"
-                  title="100 Forehead Kisses & Head Massages"
-                  benefit="To be redeemed on stressful days, tired evenings, or whenever Tannu needs unconditional pampering."
-                />
-                <ForeheadKissButton label="Give sleeping Tannu a forehead kiss 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 31 */}
-            <Page pageNumber={31} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Every Single Day 2026" location="Everywhere" mood="Noticing every little thing" />
-                <ChapterHeader number="Chapter Nine" title="The Little Things" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u9.jpg"
-                    caption="stolen quiet moment"
-                    date="2026"
-                    backNote="Just holding you by the window on a random quiet afternoon."
-                    rotation={-2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u10.jpg"
-                    caption="your smile at me"
-                    date="2026"
-                    backNote="You looked up at me right here and my heart melted into a puddle."
-                    rotation={1.5}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                {/* Infographic: Love in Numbers */}
-                <div className="p-2 rounded-xs bg-[#fffef5] border border-amber-900/15 shadow-2xs font-handwriting text-center select-none">
-                  <span className="text-[12px] uppercase text-rose-deep font-bold tracking-wider">📊 OUR LOVE IN NUMBERS</span>
-                  <div className="grid grid-cols-3 gap-1 mt-1 text-[13px] text-[#2c1d18]">
-                    <div className="bg-rose-50 p-1 rounded-xs"><strong className="text-rose-deep block text-sm">15th Feb</strong>Sacred Date</div>
-                    <div className="bg-amber-50 p-1 rounded-xs"><strong className="text-amber-900 block text-sm">50,000+</strong>Texts Exchanged</div>
-                    <div className="bg-rose-50 p-1 rounded-xs"><strong className="text-rose-deep block text-sm">0.000%</strong>Chance I'll Leave</div>
-                  </div>
-                </div>
-                <StickyNote color="amber" rotation={-1.5} className="text-center">
-                  "In a world obsessed with big things, you made me fall in love with the quiet, ordinary seconds."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 32 */}
-            <Page pageNumber={32} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Mirror Moments 2026" location="Elevators & Hallways" mood="Holding you tight" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u11.jpg"
-                    caption="our elevator mirror hugs"
-                    date="2026"
-                    backNote="Every elevator ride is an excuse to wrap both arms around you."
-                    rotation={-1.5}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                  <AutoplayFilmFrame
-                    src="/assets/us/uv4.mp4"
-                    poster="/assets/us/u11.jpg"
-                    caption="us holding each other"
-                    rotation={2}
-                    size="xs"
-                  />
-                </div>
-                <P className="font-bold text-rose-deep">
-                  Every mirror is an excuse to hug you.
-                </P>
-                <P>
-                  Every elevator mirror, hallway reflection, or fitting room mirror — I always pull you into my arms from behind, tuck my chin onto your shoulder, and snap a photo.
-                </P>
-                <PeelWaxSeal
-                  title="What I think every time I see our reflection"
-                  secret="I look at us and genuinely wonder: 'What good karma did I do in my past life to deserve a girl this precious in my arms?'"
-                />
-                <MarginNote color="ink" rotation={-1} className="text-right">
-                  — forever wrapped around you ♡
-                </MarginNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 33 */}
-            <Page pageNumber={33} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Pure Bakchodi 2026" location="Everywhere We Go" mood="Pure chaos & laughter" />
-                <ChapterHeader number="Chapter Ten" title="Stupid Little Moments" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u12.jpg"
-                    caption="our dumb faces"
-                    date="2026"
-                    backNote="We literally make faces like this in fancy restaurants. Zero regrets."
-                    rotation={-2}
-                    tapeColor="rose"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u13.jpg"
-                    caption="laughing uncontrollably"
-                    date="2026"
-                    backNote="I was laughing so hard my stomach cramped. You are the funniest person I know."
-                    rotation={2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  The stupid inside jokes nobody else would ever understand. Making silly accents, mocking each other, doing random bakchodi in public where people look at us like we're insane.
-                </P>
-                <LoveCoupon
-                  id="003"
-                  title="The 'Tannu Wins The Argument' Pass"
-                  benefit="Can be presented at any moment during a playful disagreement. Yash must immediately say: 'You are right, babu.'"
-                />
-                <StickyNote color="pink" rotation={-1} className="text-center">
-                  "Life is serious enough. With you, it is pure comedy and joy."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 34 */}
-            <Page pageNumber={34} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Road Trip Era 2026" location="In the Car" mood="Fighting for the aux cord" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/us/uv5.mp4"
-                    poster="/assets/us/u14.jpg"
-                    caption="screaming song lyrics"
-                    rotation={-1.5}
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u14.jpg"
-                    caption="stealing my fries"
-                    date="2026"
-                    backNote="'I don't want anything to eat' ... and then this happened."
-                    rotation={2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                </div>
-                <P className="font-bold text-rose-deep">
-                  'I am not hungry,' she said.
-                </P>
-                <P>
-                  And then proceeded to eat 80% of my fries! Fighting over the aux cord, screaming romantic songs off-key at the top of our lungs with the windows down.
-                </P>
-                <InteractiveChecklist
-                  title="Rules of our drives"
-                  items={[
-                    "Tannu is the resident DJ (even when songs are questionable)",
-                    "My food belongs to Tannu",
-                    "Tannu's food belongs strictly to Tannu",
-                    "Hand-holding is mandatory on the gear shift"
-                  ]}
-                />
-                <ForeheadKissButton label="Send a road trip kiss 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 35 */}
-            <Page pageNumber={35} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="The Living Reel 2026" location="Our Vault" mood="100% raw & real" />
-                <ChapterHeader number="Chapter 10.5" title="Us, Unfiltered" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/unfiltered/unfiltered_1.mp4"
-                    poster="/assets/us/u15.jpg"
-                    caption="reel frame 1"
-                    rotation={-1.5}
-                    size="xs"
-                  />
-                  <AutoplayFilmFrame
-                    src="/assets/unfiltered/unfiltered_2.mp4"
-                    poster="/assets/us/u16.jpg"
-                    caption="reel frame 2"
-                    rotation={2}
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  These clips aren't curated for social media. These are our real, goofy, beautiful moments together.
-                </P>
-                <PeelWaxSeal
-                  title="Why these videos are my favorite"
-                  secret="Because in these videos, there is zero pretense. It is just you and me being completely goofy, safe, and happy in our own little universe."
-                />
-                <div className="text-center pt-1">
-                  <VintageStamp text="100% RAW & UNFILTERED" rotation={-2} />
-                </div>
-              </div>
-
-            </Page>
-
-            {/* PAGE 36 */}
-            <Page pageNumber={36} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Late Night Thoughts 2026" location="Under the Stars" mood="Vulnerable & deeply grateful" />
-                <ChapterHeader number="Chapter Eleven" title="Things I Don't Say Enough" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/us/u15.jpg"
-                    caption="holding your hand forever"
-                    date="2026"
-                    backNote="I hold your hand in public because I want the whole world to know you are mine."
-                    rotation={-1.5}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u16.jpg"
-                    caption="your warmth beside me"
-                    date="2026"
-                    backNote="Every time you lean your head on my shoulder, all my stress disappears."
-                    rotation={2}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  I know I am not always the best at expressing everything out loud, Tannu. But I want you to know how deeply proud I am of the woman you are.
-                </P>
-                <FoldOutNote
-                  teaser="A letter of appreciation for my girl"
-                  letter="You handle so much in your life with so much quiet grace. You work hard, you care for the people around you, and you have the purest, softest heart. Loving you has made me want to be the best version of myself."
-                />
-                <StickyNote color="pink" rotation={-1.5} className="text-center">
-                  "You make this world so much softer just by being in it."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 37 */}
-            <Page pageNumber={37} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="When Life Gets Heavy" location="My Anchor" mood="Calmed by your touch" />
-                <div className="flex items-start gap-2">
-                  <FlipPolaroid
-                    src="/assets/us/u17.jpg"
-                    caption="my safe harbor"
-                    date="2026"
-                    backNote="You are my safe harbor. No matter what happens outside, here with you I am at peace."
-                    rotation={-2}
-                    tapeColor="cream"
-                    size="xs"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      You are the calm in my storm.
-                    </P>
-                    <P>
-                      Whenever my thoughts get loud, whenever anxiety hits me, all I need is for you to put your hand on my chest or hold my cheek.
-                    </P>
-                  </div>
-                </div>
-                <Quote>
-                  "Your touch can silence a hurricane in my head in two seconds."
-                </Quote>
-                <LoveMeter caption="How much peace Tannu brings me:" />
-                <ForeheadKissButton label="Send a kiss to your anchor 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 38 */}
-            <Page pageNumber={38} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Through the Storms" location="Kitchen Floor / Long Hugs" mood="Choosing each other every time" />
-                <ChapterHeader number="Chapter Twelve" title="Not-So-Perfect Parts" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      We are not a fairytale.
-                    </P>
-                    <P>
-                      We have had misunderstandings. We have argued, we have cried, we have sat in painful silence.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/us/u18.jpg"
-                    caption="after the rain comes warmth"
-                    date="2026"
-                    backNote="We fought for an hour, cried, and then held each other for two hours. We are unbreakable."
-                    rotation={2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  But what makes us sacred is that neither of us ever walks away. We always end up in that tight kitchen hug, whispering apologies and holding each other like our lives depend on it.
-                </P>
-                <InteractiveChecklist
-                  title="Our non-negotiable fight rules"
-                  items={[
-                    "Never go to sleep without resolving it",
-                    "Always hold hands even when we are mad",
-                    "Apologize first because love is bigger than pride",
-                    "Always choose each other at the end of the day"
-                  ]}
-                />
-                <MarginNote color="red" rotation={-1} className="font-bold">
-                  — storms don't break us, they bind us tighter ♡
-                </MarginNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 39 */}
-            <Page pageNumber={39} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Future Dreams" location="Our Future Home" mood="Dreaming of forever with you" />
-                <ChapterHeader number="Chapter Thirteen" title="The Life I Imagine" />
-                <div className="flex items-start gap-2">
-                  <div className="flex-1 space-y-1">
-                    <P className="font-bold text-rose-deep">
-                      When I close my eyes and imagine the future...
-                    </P>
-                    <P>
-                      It is never just me. It is always you beside me.
-                    </P>
-                  </div>
-                  <FlipPolaroid
-                    src="/assets/us/u19.jpg"
-                    caption="my forever person"
-                    date="2026 & forever"
-                    backNote="My future wife, my best friend, my soulmate. I see you in all my tomorrows."
-                    rotation={-1.5}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  A warm little apartment filled with plants, sunlight streaming through sheer curtains, waking up to your messy hair, making tea for you in the morning, and kissing your sleepy forehead.
-                </P>
-                <MemoryQuiz
-                  question="What is the first thing we will buy for our future place?"
-                  options={["A giant comfortable couch", "A cute puppy", "Plants that Tannu promises to water"]}
-                  reaction="A puppy and that giant couch where we can binge-watch shows with you curled up on my chest!"
-                />
-                <StickyNote color="amber" rotation={1.5} className="text-center">
-                  "Building a lifetime with you is the only dream I care about."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 40 */}
-            <Page pageNumber={40} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="Bucket List" location="Santorini & Mountains" mood="Counting the sunsets we'll see" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/unfiltered/unfiltered_5.mp4"
-                    poster="/assets/us/u17.jpg"
-                    caption="travel memories 1"
-                    rotation={-1.5}
-                    size="xs"
-                  />
-                  <AutoplayFilmFrame
-                    src="/assets/unfiltered/unfiltered_6.mp4"
-                    poster="/assets/us/u18.jpg"
-                    caption="travel memories 2"
-                    rotation={2}
-                    size="xs"
-                  />
-                </div>
-                <P className="font-bold text-rose-deep">
-                  We are going to see the world together.
-                </P>
-                <P>
-                  Standing on the cliffs of Santorini watching the sun melt into the Mediterranean. Clumsily dancing together in our kitchen while dinner burns on the stove.
-                </P>
-                <FoldOutNote
-                  teaser="A promise for all our tomorrows"
-                  letter="I promise to show you all the places you've dreamed of visiting. We will collect sunsets across the world, hand in hand, step by step."
-                />
-                <VintageStamp text="FOREVER COMMITTED" rotation={-2} />
-              </div>
-
-            </Page>
-
-            {/* PAGE 41 */}
-            <Page pageNumber={41} totalPages={totalPages}>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="A Thousand Lifetimes" location="The Cosmos" mood="In every universe, it's you" />
-                <ChapterHeader number="Chapter Fourteen" title="If I Could Go Back" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <AutoplayFilmFrame
-                    src="/assets/unfiltered/unfiltered_9.mp4"
-                    poster="/assets/us/u19.jpg"
-                    caption="timeless us 1"
-                    rotation={-2}
-                    size="xs"
-                  />
-                  <AutoplayFilmFrame
-                    src="/assets/unfiltered/unfiltered_10.mp4"
-                    poster="/assets/her/h1.jpg"
-                    caption="timeless us 2"
-                    rotation={1.5}
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  If someone gave me a time machine and allowed me to live a thousand different lives in a thousand different realities...
-                </P>
-                <Quote>
-                  "I would search for you in every single universe, and I would choose you every single time."
-                </Quote>
-                <GoldenScratchCard
-                  prompt="Tap to scratch the eternal promise ticket ✨"
-                  hiddenMessage="In every lifetime, in every universe, I would find you faster, hold you sooner, and love you even deeper than I do today."
-                />
-                <ForeheadKissButton label="Send a lifetime kiss 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 42 */}
-            <Page pageNumber={42} totalPages={totalPages} warm>
-
-              <div className="space-y-1.5">
-                <DiaryHeader date="2026: Full Circle" location="Present Day" mood="Completely transformed by love" />
-                <ChapterHeader number="Chapter Fifteen" title="The Boy After You" />
-                <div className="flex items-center justify-around gap-2 my-1">
-                  <FlipPolaroid
-                    src="/assets/yash/yash_before.jpg"
-                    caption="2024: the lonely boy before"
-                    date="pre-2025"
-                    backNote="The boy who thought he was too cool to feel anything."
-                    rotation={-2}
-                    tapeColor="gold"
-                    size="xs"
-                  />
-                  <FlipPolaroid
-                    src="/assets/us/u19.jpg"
-                    caption="2026: the boy you softened"
-                    date="2026"
-                    backNote="The boy whose entire happiness resides in your smile."
-                    rotation={2}
-                    tapeColor="pink"
-                    size="xs"
-                  />
-                </div>
-                <P>
-                  Look at the boy on Page 3 and look at the boy sitting here today writing this for you.
-                </P>
-                <P>
-                  The careless, selfish boy is gone. You taught me how to care, how to feel, how to be patient, and how to love with everything I have.
-                </P>
-                <InteractiveChecklist
-                  title="What Tannu did to Yash"
-                  items={[
-                    "Taught him what home feels like",
-                    "Softened every sharp edge of his heart",
-                    "Made him believe in true soulmates",
-                    "Became the center of his entire universe"
-                  ]}
-                />
-                <StickyNote color="pink" rotation={-1.5} className="text-center font-bold">
-                  "I am who I am today because you loved me."
-                </StickyNote>
-              </div>
-
-            </Page>
-
-            {/* PAGE 43 */}
-            <Page pageNumber={43} totalPages={totalPages}>
-
-              <div className="space-y-1.5 text-center">
-                <DiaryHeader date="TODAY" location="Our Sacred Space" mood="Celebrating my favorite human" />
-                <span className="font-handwriting text-[13px] uppercase text-rose-deep font-bold tracking-widest">CHAPTER FINALE</span>
-                <h3 className="font-handwriting text-3xl font-bold text-rose-deep drop-shadow-xs">Happy Birthday, My Tannu ♡</h3>
-                <div className="w-16 h-0.5 bg-amber-900/20 mx-auto my-0.5" />
-                <P className="italic text-[#2c1d18]">
-                  Happy Birthday to the girl who holds my entire world in her hands. Today is about celebrating the day the universe gave me my greatest blessing.
-                </P>
-
-                {/* Interactive Candle Blowing Cake */}
-                <InteractiveBirthdayCake onOpenLetter={onOpenLetter} />
-
-                <ForeheadKissButton label="Send 100 Birthday Forehead Kisses 💋" />
-              </div>
-
-            </Page>
-
-            {/* PAGE 44 */}
-            <Page pageNumber={44} totalPages={totalPages} warm>
-
-              <div className="h-full flex flex-col justify-between items-center text-center py-2">
-                <DiaryHeader date="Forever and Always" location="Our Journey" mood="Just the beginning" />
-                <div className="my-auto space-y-2 max-w-[270px]">
-                  <div className="w-12 h-12 rounded-full border-2 border-rose-deep/40 flex items-center justify-center mx-auto text-xl shadow-xs">
-                    💌
-                  </div>
-                  <div className="font-handwriting text-2xl font-bold text-rose-deep">
-                    The End of This Diary.
-                  </div>
-                  <div className="font-handwriting text-xl text-[#3d2721] font-semibold">
-                    The Beginning of Our Forever.
-                  </div>
-                  <P className="italic text-sm text-[#4a2e25]">
-                    "I love you, Tanisha Jha. More than yesterday, and less than tomorrow."
-                  </P>
-                  <VintageStamp text="YASH ♡ TANNU • TO INFINITY" rotation={-2} />
-                </div>
-                <div className="space-y-1 w-full max-w-[250px]">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCloseDiary();
-                    }}
-                    className="w-full py-1.5 px-3 rounded-full bg-amber-900/10 hover:bg-amber-900/20 active:scale-95 text-[#3d2721] font-handwriting text-sm font-bold border border-amber-900/20 shadow-2xs cursor-pointer transition-all"
-                  >
-                    Close Diary ♡ (Keep in my heart)
-                  </button>
-                </div>
-              </div>
-
-            </Page>
-
+            {allPages}
           </HTMLFlipBook>
         </div>
 
