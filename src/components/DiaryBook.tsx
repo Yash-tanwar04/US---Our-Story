@@ -11,6 +11,7 @@ import { UnfilteredFilmModal } from './UnfilteredFilmModal';
 import { RealVoiceNotePlayer } from './RealVoiceNotePlayer';
 import { VoiceNoteModal } from './VoiceNoteModal';
 import { GrandWishingVideoReveal } from './GrandWishingVideoReveal';
+import { TannuEditFrame } from './TannuEditFrame';
 import { triggerReaction } from '../utils/reactions';
 import type { CustomDiaryData } from './CustomizerModal';
 
@@ -998,6 +999,26 @@ const CHAPTER_DIRECTORY = [
   { page: 43, label: 'Happy Birthday Tannu ♡' },
 ];
 
+const mobilePageVariants = {
+  initial: (dir: 'next' | 'prev') => ({
+    opacity: 0,
+    x: dir === 'next' ? 40 : -40,
+    rotateY: dir === 'next' ? -6 : 6,
+  }),
+  animate: {
+    opacity: 1,
+    x: 0,
+    rotateY: 0,
+    transition: { duration: 0.22, ease: [0.25, 1, 0.5, 1] as [number, number, number, number] },
+  },
+  exit: (dir: 'next' | 'prev') => ({
+    opacity: 0,
+    x: dir === 'next' ? -40 : 40,
+    rotateY: dir === 'next' ? 6 : -6,
+    transition: { duration: 0.18, ease: [0.25, 1, 0.5, 1] as [number, number, number, number] },
+  }),
+};
+
 // ─── MAIN 44-PAGE DIARY BOOK COMPONENT ────────────────────────────────────────
 export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
   const flipBookRef = useRef<any>(null);
@@ -1027,8 +1048,11 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const [flipDirection, setFlipDirection] = useState<'next' | 'prev'>('next');
+
   const nextFlip = () => {
     if (_currentPage >= totalPages - 1) return;
+    setFlipDirection('next');
     soundEngine.playPaperFlip();
     const next = _currentPage + 1;
     setCurrentPage(next);
@@ -1036,12 +1060,13 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
     if (!isMobile && flipBookRef.current) {
       (flipBookRef.current as any)?.pageFlip()?.flipNext();
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
     }
   };
 
   const prevFlip = () => {
     if (_currentPage <= 0) return;
+    setFlipDirection('prev');
     soundEngine.playPaperFlip();
     const prev = _currentPage - 1;
     setCurrentPage(prev);
@@ -1049,19 +1074,20 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
     if (!isMobile && flipBookRef.current) {
       (flipBookRef.current as any)?.pageFlip()?.flipPrev();
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
     }
   };
 
   const jumpToPage = (pageNum: number) => {
     const targetIdx = Math.max(0, Math.min(totalPages - 1, pageNum - 1));
+    setFlipDirection(targetIdx > _currentPage ? 'next' : 'prev');
     soundEngine.playPaperFlip();
     setCurrentPage(targetIdx);
     soundEngine.setTrackForPage(targetIdx + 1);
     if (!isMobile && flipBookRef.current) {
       (flipBookRef.current as any)?.pageFlip()?.turnToPage(targetIdx);
     } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo(0, 0);
     }
     setShowChapterMenu(false);
   };
@@ -2679,6 +2705,7 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                     "Became the center of his entire universe"
                   ]}
                 />
+                <TannuEditFrame />
                 <StickyNote color="pink" rotation={-1.5} className="text-center font-bold">
                   "I am who I am today because you loved me."
                 </StickyNote>
@@ -2809,14 +2836,16 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
         </div>
 
         {/* MOBILE VIEW (Screen < 768px): Natural-height scrollable book page with smooth 3D page flip transition */}
-        <div className="md:hidden w-full max-w-[440px] mx-auto px-1 sm:px-2">
-          <AnimatePresence mode="wait" initial={false}>
+        <div className="md:hidden w-full max-w-[440px] mx-auto px-1 sm:px-2 [perspective:1200px]">
+          <AnimatePresence custom={flipDirection} mode="wait" initial={false}>
             <motion.div
               key={_currentPage}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.28, ease: 'easeOut' }}
+              custom={flipDirection}
+              variants={mobilePageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ transformOrigin: flipDirection === 'next' ? 'left center' : 'right center' }}
               className="w-full shadow-2xl rounded-sm"
             >
               {allPages[_currentPage]}

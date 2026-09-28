@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Volume2, VolumeX, Maximize2 } from 'lucide-react';
+import { Volume2, VolumeX, Maximize2, Play } from 'lucide-react';
+import { soundEngine } from '../utils/audio';
 
 interface AutoplayFilmFrameProps {
   src: string;
@@ -28,6 +29,7 @@ export const AutoplayFilmFrame: React.FC<AutoplayFilmFrameProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
 
   const sizeMap = {
     xs: 'w-28 sm:w-32',
@@ -43,11 +45,28 @@ export const AutoplayFilmFrame: React.FC<AutoplayFilmFrameProps> = ({
     rose:  'bg-[#ffebee]/95 border-x-2 border-rose-400/70 border-dashed',
   };
 
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      if (!isMuted) soundEngine.pauseMusic();
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
   const toggleSound = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
+      const willMute = !videoRef.current.muted;
+      videoRef.current.muted = willMute;
+      setIsMuted(willMute);
+      if (!willMute) {
+        soundEngine.pauseMusic();
+        videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      }
     }
   };
 
@@ -71,7 +90,11 @@ export const AutoplayFilmFrame: React.FC<AutoplayFilmFrameProps> = ({
 
       {/* Polaroid Video Frame */}
       <div className="bg-[#fffdf9] p-1.5 sm:p-2 pb-3.5 sm:pb-4 shadow-[0_6px_20px_rgba(75,45,25,0.2)] rounded-xs border border-amber-900/10 group">
-        <div className="relative overflow-hidden bg-black aspect-[3/4] rounded-xs shadow-inner">
+        <div
+          onClick={togglePlay}
+          className="relative overflow-hidden bg-black aspect-[3/4] rounded-xs shadow-inner cursor-pointer"
+          title="Tap to play / pause video"
+        >
           <video
             ref={videoRef}
             src={src}
@@ -81,8 +104,19 @@ export const AutoplayFilmFrame: React.FC<AutoplayFilmFrameProps> = ({
             muted={isMuted}
             playsInline
             preload="auto"
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
             className="w-full h-full object-cover"
           />
+
+          {/* Play icon indicator when paused */}
+          {!isPlaying && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+              <div className="w-8 h-8 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-md">
+                <Play className="w-4 h-4 fill-white ml-0.5" />
+              </div>
+            </div>
+          )}
 
           {/* Controls overlay on hover */}
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-xs p-1 rounded-full">

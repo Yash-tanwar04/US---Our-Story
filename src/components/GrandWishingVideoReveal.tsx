@@ -25,6 +25,7 @@ export const GrandWishingVideoReveal: React.FC<GrandWishingVideoRevealProps> = (
     } else {
       // Step 3: THE GRAND UNVEILING!
       setStep(3);
+      soundEngine.pauseMusic();
 
       triggerReaction({
         emoji: '🎬',
@@ -39,22 +40,59 @@ export const GrandWishingVideoReveal: React.FC<GrandWishingVideoRevealProps> = (
         origin: { y: 0.55 },
         colors: ['#ad1457', '#e91e63', '#ffc107', '#ff80ab', '#ffffff', '#ffd700'],
       });
+
+      // Start playing instantly!
+      setTimeout(() => {
+        if (videoRef.current) {
+          const video = videoRef.current;
+          video.currentTime = 0;
+          const p = video.play();
+          if (p !== undefined) {
+            p.then(() => {
+              setIsPlaying(true);
+            }).catch(() => {
+              // If unmuted autoplay blocked by mobile policy, start muted and allow unmute
+              video.muted = true;
+              video.play().then(() => setIsPlaying(true)).catch(() => {});
+            });
+          }
+        }
+      }, 100);
     }
   };
+
+  // Also auto-play if step is 3 and video mounts
+  React.useEffect(() => {
+    if (step === 3 && videoRef.current) {
+      soundEngine.pauseMusic();
+      const video = videoRef.current;
+      const p = video.play();
+      if (p !== undefined) {
+        p.then(() => setIsPlaying(true)).catch(() => {
+          video.muted = true;
+          video.play().then(() => setIsPlaying(true)).catch(() => {});
+        });
+      }
+    }
+  }, [step]);
 
   const handlePlayVideo = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!videoRef.current) return;
 
-    if (videoRef.current.paused) {
-      soundEngine.pauseMusic();
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch((err) => {
-        console.error('Video play error:', err);
-      });
+    soundEngine.pauseMusic();
+    const video = videoRef.current;
+    if (video.paused) {
+      video.muted = false; // ensure sound is unmuted
+      const p = video.play();
+      if (p !== undefined) {
+        p.then(() => setIsPlaying(true)).catch(() => {
+          video.muted = true;
+          video.play().then(() => setIsPlaying(true)).catch(() => {});
+        });
+      }
     } else {
-      videoRef.current.pause();
+      video.pause();
       setIsPlaying(false);
     }
   };

@@ -74,11 +74,13 @@ export const RealVoiceNotePlayer: React.FC<RealVoiceNotePlayerProps> = ({
   const [showNotes, setShowNotes] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const prevPartRef = useRef(activePart);
   const currentTrack = VOICE_TRACKS[activePart - 1];
 
-  // Sync track when part changes
+  // Only sync track when activePart changes (NOT on play/pause)
   useEffect(() => {
-    if (audioRef.current) {
+    if (prevPartRef.current !== activePart && audioRef.current) {
+      prevPartRef.current = activePart;
       const wasPlaying = isPlaying;
       audioRef.current.src = currentTrack.src;
       audioRef.current.load();
@@ -92,26 +94,31 @@ export const RealVoiceNotePlayer: React.FC<RealVoiceNotePlayerProps> = ({
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      // Pause background ambient music while listening to Yash's voice
+    if (audio.paused) {
       soundEngine.pauseMusic();
-      audioRef.current.playbackRate = playbackRate;
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-        triggerReaction({
-          emoji: '🎙️',
-          title: "Listening to Yash's Voice ♡",
-          subtitle: `Playing ${currentTrack.title}...`,
-          particles: ['🎙️', '💖', '✨', '🎧', '🌸'],
-        });
-      }).catch((err) => {
-        console.error('Audio play error:', err);
-      });
+      audio.playbackRate = playbackRate;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            triggerReaction({
+              emoji: '🎙️',
+              title: "Listening to Yash's Voice ♡",
+              subtitle: `Playing ${currentTrack.title}...`,
+              particles: ['🎙️', '💖', '✨', '🎧', '🌸'],
+            });
+          })
+          .catch((err) => {
+            console.error('Audio play error:', err);
+          });
+      }
+    } else {
+      audio.pause();
+      setIsPlaying(false);
     }
   };
 
@@ -188,8 +195,10 @@ export const RealVoiceNotePlayer: React.FC<RealVoiceNotePlayerProps> = ({
         ref={audioRef}
         src={currentTrack.src}
         onTimeUpdate={handleTimeUpdate}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
         onEnded={handleEnded}
-        preload="metadata"
+        preload="auto"
       />
 
       {/* Decorative Washi Tape */}
