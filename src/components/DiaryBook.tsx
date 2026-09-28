@@ -704,7 +704,13 @@ const Page = forwardRef<HTMLDivElement, {
       }`} />
       
       {/* Scrollable content area: cozy responsive padding on mobile */}
-      <div className="p-2 sm:p-4 flex-1 flex flex-col justify-between overflow-y-auto z-0 scrollbar-thin">
+      <div
+        className="p-2 sm:p-4 flex-1 flex flex-col justify-between overflow-y-auto z-0 scrollbar-thin overscroll-contain"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+        }}
+      >
         {children}
       </div>
 
@@ -798,31 +804,17 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
   const nextFlip = () => {
     const pf = (flipBookRef.current as any)?.pageFlip();
     if (!pf) return;
+    if (pf.getState && pf.getState() !== 'read') return;
     soundEngine.playPaperFlip();
-    const curr = pf.getCurrentPageIndex();
-    if (curr < totalPages - 1) {
-      pf.flipNext();
-      setTimeout(() => {
-        if (pf.getCurrentPageIndex() === curr) {
-          pf.turnToNextPage();
-        }
-      }, 300);
-    }
+    pf.flipNext();
   };
 
   const prevFlip = () => {
     const pf = (flipBookRef.current as any)?.pageFlip();
     if (!pf) return;
+    if (pf.getState && pf.getState() !== 'read') return;
     soundEngine.playPaperFlip();
-    const curr = pf.getCurrentPageIndex();
-    if (curr > 0) {
-      pf.flipPrev();
-      setTimeout(() => {
-        if (pf.getCurrentPageIndex() === curr) {
-          pf.turnToPrevPage();
-        }
-      }, 300);
-    }
+    pf.flipPrev();
   };
 
   const jumpToPage = (pageNum: number) => {
@@ -913,9 +905,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
           {/* @ts-expect-error – react-pageflip library types */}
           <HTMLFlipBook
             ref={flipBookRef}
-            width={360} height={555} size="stretch"
-            minWidth={285} maxWidth={480}
-            minHeight={435} maxHeight={660}
+            width={360} height={535} size="stretch"
+            minWidth={280} maxWidth={460}
+            minHeight={420} maxHeight={630}
             maxShadowOpacity={0.3}
             showCover={false}
             mobileScrollSupport={false}
@@ -2627,43 +2619,8 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
           </HTMLFlipBook>
         </div>
 
-        {/* Dedicated Mobile & Desktop Quick Turn Controls */}
-        <div className="mt-3 flex items-center justify-between gap-2 w-full max-w-[440px] px-2 z-30 select-none">
-          <button
-            type="button"
-            onClick={prevFlip}
-            disabled={_currentPage <= 0}
-            className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full font-handwriting text-xs sm:text-sm font-bold shadow-xs transition-all touch-manipulation ${
-              _currentPage <= 0
-                ? 'opacity-30 bg-stone-200 text-stone-500 cursor-not-allowed'
-                : 'bg-[#fff9ed] text-rose-deep border border-rose-300 hover:bg-rose-100 active:scale-95 cursor-pointer'
-            }`}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Prev Page</span>
-          </button>
-
-          <div className="flex items-center gap-1 text-xs sm:text-sm font-handwriting font-bold text-amber-950/80 bg-[#fff9ed]/90 px-3 py-1 rounded-full border border-amber-900/15 shadow-2xs">
-            <span>Page {_currentPage + 1} of {totalPages}</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={nextFlip}
-            disabled={_currentPage >= totalPages - 1}
-            className={`flex items-center gap-1 px-4 py-1.5 rounded-full font-handwriting text-xs sm:text-sm font-bold shadow-xs transition-all touch-manipulation ${
-              _currentPage >= totalPages - 1
-                ? 'opacity-30 bg-stone-200 text-stone-500 cursor-not-allowed'
-                : 'bg-rose-600 text-white border border-rose-600 hover:bg-rose-700 active:scale-95 cursor-pointer'
-            }`}
-          >
-            <span>Next Page</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
         {/* Bottom Quick Bar */}
-        <div className="mt-2.5 flex items-center justify-between w-full max-w-lg px-4 text-xs font-handwriting text-amber-900/60">
+        <div className="mt-3 flex items-center justify-between w-full max-w-lg px-4 text-xs font-handwriting text-amber-900/60">
           <button onClick={handleCloseDiary} className="hover:text-rose-deep transition-colors cursor-pointer flex items-center gap-1 font-bold">
             <span>✖</span> Close Diary
           </button>

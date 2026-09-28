@@ -3,15 +3,32 @@
 @tailwind utilities;
 
 @layer base {
-  html, body {
+  html {
+    width: 100%;
+    min-height: 100%;
+    background-color: #fcedf2;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
+    min-height: 100%;
     background-color: #fcedf2;
     overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     font-family: 'Caveat', 'Dancing Script', cursive;
     color: #3d312e;
+  }
+
+  #root {
+    min-height: 100%;
+    width: 100%;
   }
 }
 
@@ -117,13 +134,15 @@
 }
 
 /* StPageFlip standard styling overrides */
-.stPageFlip {
+.stPageFlip, .stf__parent, .stf__wrapper {
   margin: 0 auto;
+  touch-action: pan-y !important;
 }
 
 .page {
   background-color: #fefcf6;
   overflow: hidden;
+  touch-action: pan-y !important;
 }
 
 .page-content {
