@@ -695,7 +695,7 @@ const Page = forwardRef<HTMLDivElement, {
   return (
     <div
       ref={ref}
-      className={`${bgClass} text-ink-dark h-full w-full relative flex flex-col overflow-hidden select-none`}
+      className={`${bgClass} text-ink-dark h-full w-full relative flex flex-col overflow-hidden`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Book binding gutter shadow */}
@@ -703,9 +703,9 @@ const Page = forwardRef<HTMLDivElement, {
         isLeft ? 'right-0 bg-gradient-to-l from-amber-950/[0.12] to-transparent' : 'left-0 bg-gradient-to-r from-amber-950/[0.12] to-transparent'
       }`} />
       
-      {/* Scrollable content area: cozy responsive padding on mobile */}
+      {/* Scrollable content area: cozy responsive padding on mobile with min-h-0 for flex scrolling */}
       <div
-        className="p-2 sm:p-4 flex-1 flex flex-col justify-between overflow-y-auto z-0 scrollbar-thin overscroll-contain"
+        className="p-2 sm:p-4 flex-1 min-h-0 flex flex-col justify-between overflow-y-auto z-0 scrollbar-thin overscroll-contain"
         style={{
           WebkitOverflowScrolling: 'touch',
           touchAction: 'pan-y',
@@ -910,7 +910,7 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
             minHeight={420} maxHeight={630}
             maxShadowOpacity={0.3}
             showCover={false}
-            mobileScrollSupport={false}
+            mobileScrollSupport={true}
             disableFlipByClick={false}
             clickEventForward={true}
             useMouseEvents={false}
@@ -959,16 +959,16 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
             {/* PAGE 2 */}
             <Page pageNumber={2} totalPages={totalPages} warm>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <DiaryHeader date="2025 - Forever" location="Our Universe" mood="Grateful for every single second" />
-                <div className="text-center pb-1 border-b border-amber-900/20">
-                  <span className="font-handwriting text-[13px] uppercase text-rose-deep font-bold">Chapters of My Heart</span>
-                  <h3 className="font-handwriting text-2xl font-bold text-ink-dark">Index of Our Memories</h3>
+                <div className="text-center pb-0.5 border-b border-amber-900/20">
+                  <span className="font-handwriting text-[12px] uppercase text-rose-deep font-bold">Chapters of My Heart</span>
+                  <h3 className="font-handwriting text-xl sm:text-2xl font-bold text-ink-dark leading-tight">Index of Our Memories</h3>
                 </div>
-                <P className="italic text-center text-sm text-amber-950/80">
+                <P className="italic text-center text-xs sm:text-sm text-amber-950/80 leading-snug">
                   "Every single page in this diary, Tannu, was handwritten just for you."
                 </P>
-                <div className="space-y-0.5 font-handwriting text-[14px] sm:text-[15px] text-[#3d2a23] pl-2 border-l-2 border-amber-900/20">
+                <div className="space-y-0 font-handwriting text-[12.5px] sm:text-[14px] text-[#3d2a23] pl-2 border-l-2 border-amber-900/20 leading-tight">
                   <p><strong className="text-rose-deep font-bold">Ch 1 (p. 3):</strong> Who I was before 2025 (The guarded boy)</p>
                   <p><strong className="text-rose-deep font-bold">Ch 2 (p. 7):</strong> July 2025: When we were strangers</p>
                   <p><strong className="text-rose-deep font-bold">Ch 3 (p. 9):</strong> Sept 2025: That comedy story I replied to</p>
@@ -991,9 +991,6 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                   title="Yash's secret note before you start reading"
                   secret="Tannu, 2025 was the year my life truly began. Everything before you was just waiting for you to arrive."
                 />
-                <MarginNote color="red" rotation={-1} className="text-center font-bold">
-                  [ Tap 'Turn page 💖' on any page to flip forward! ]
-                </MarginNote>
               </div>
 
             </Page>
