@@ -8,6 +8,8 @@ import { LilySVG } from './LilySVG';
 import { soundEngine } from '../utils/audio';
 import { AutoplayFilmFrame } from './AutoplayFilmFrame';
 import { UnfilteredFilmModal } from './UnfilteredFilmModal';
+import { RealVoiceNotePlayer } from './RealVoiceNotePlayer';
+import { VoiceNoteModal } from './VoiceNoteModal';
 import { triggerReaction } from '../utils/reactions';
 import type { CustomDiaryData } from './CustomizerModal';
 
@@ -402,56 +404,7 @@ const LoveCoupon: React.FC<LoveCouponProps> = ({ id, title, benefit }) => {
   );
 };
 
-// ─── NEW CREATIVE COMPONENT 9: VOICE NOTE SIMULATOR ─────────────────────────
-interface VoiceNoteSimulatorProps {
-  title: string;
-  time: string;
-  transcript: string;
-}
-const VoiceNoteSimulator: React.FC<VoiceNoteSimulatorProps> = ({ title, time, transcript }) => {
-  const [playing, setPlaying] = useState(false);
-  return (
-    <div
-      onClick={(e) => e.stopPropagation()}
-      className="my-1.5 p-2 rounded-xs bg-[#f4ece1]/80 border border-amber-900/20 shadow-2xs select-none"
-    >
-      <div className="flex items-center justify-between text-[11px] font-handwriting text-amber-900/70 mb-1">
-        <span className="font-bold text-rose-deep flex items-center gap-1">
-          <Volume2 className="w-3 h-3 inline text-rose-600" />
-          <span>{title}</span>
-        </span>
-        <span>{time}</span>
-      </div>
-      <div className="flex items-center gap-2 bg-white/70 p-1 rounded-full border border-amber-900/10">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setPlaying(!playing);
-          }}
-          className="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer hover:bg-rose-700 transition-all"
-        >
-          {playing ? '⏸' : '▶'}
-        </button>
-        <div className="flex-1 flex items-center gap-0.5 h-3.5">
-          {[40, 70, 30, 90, 60, 100, 45, 80, 55, 95, 35, 75, 50, 85, 60, 40].map((h, i) => (
-            <div
-              key={i}
-              className={`flex-1 rounded-full transition-all duration-300 ${
-                playing ? 'bg-rose-600 animate-pulse' : 'bg-amber-900/30'
-              }`}
-              style={{ height: `${playing ? Math.max(20, (h + (i % 3) * 15) % 100) : h * 0.4}%` }}
-            />
-          ))}
-        </div>
-        <span className="text-[10px] font-mono text-amber-900/80 pr-1.5">0:{playing ? '24' : '42'}</span>
-      </div>
-      <div className="mt-1.5 pt-1 border-t border-amber-900/15 font-handwriting text-[13px] sm:text-[14px] text-[#3d2721] italic leading-tight">
-        "{transcript}"
-      </div>
-    </div>
-  );
-};
+
 
 // ─── NEW CREATIVE COMPONENT 10: GOLDEN SCRATCH CARD ─────────────────────────
 interface GoldenScratchCardProps {
@@ -503,9 +456,10 @@ const GoldenScratchCard: React.FC<GoldenScratchCardProps> = ({
 // ─── GRAND FINALE: CINEMATIC REAL BIRTHDAY PICTURE REVEAL ─────────────────
 interface CinematicBirthdayRevealProps {
   onOpenLetter: () => void;
+  onOpenVoiceModal?: () => void;
 }
 
-const CinematicBirthdayReveal: React.FC<CinematicBirthdayRevealProps> = ({ onOpenLetter }) => {
+const CinematicBirthdayReveal: React.FC<CinematicBirthdayRevealProps> = ({ onOpenLetter, onOpenVoiceModal }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [candleBlown, setCandleBlown] = useState(false);
   const [isCinemaModalOpen, setIsCinemaModalOpen] = useState(false);
@@ -680,6 +634,21 @@ const CinematicBirthdayReveal: React.FC<CinematicBirthdayRevealProps> = ({ onOpe
               <Sparkles className="w-4 h-4 text-amber-200" />
               <span>Open Yash's Birthday Letter 💌</span>
             </button>
+
+            {/* Listen to Voice Note button */}
+            {onOpenVoiceModal && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenVoiceModal();
+                }}
+                className="w-full py-1.5 px-3 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 font-handwriting text-xs font-bold shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <Volume2 className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
+                <span>Listen to Yash's Voice Message (11 min) 🎙️</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -791,6 +760,21 @@ const CinematicBirthdayReveal: React.FC<CinematicBirthdayRevealProps> = ({ onOpe
                   <Sparkles className="w-4 h-4" />
                   <span>Open Letter 💌</span>
                 </button>
+
+                {onOpenVoiceModal && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCinemaModalOpen(false);
+                      onOpenVoiceModal();
+                    }}
+                    className="py-1.5 px-3.5 rounded-full bg-rose-500/25 border border-rose-400/50 text-amber-100 font-handwriting text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all active:scale-95 flex items-center gap-1.5 hover:bg-rose-500/35"
+                  >
+                    <Volume2 className="w-4 h-4 text-rose-300" />
+                    <span>Voice Message 🎙️</span>
+                  </button>
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -1020,6 +1004,7 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
   const [isClosing, setIsClosing] = useState(false);
   const [showChapterMenu, setShowChapterMenu] = useState(false);
   const [isFilmModalOpen, setIsFilmModalOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const totalPages = 44;
 
   const handlePageFlip = (e: { data: number }) => {
@@ -1782,10 +1767,10 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                     size="sm"
                   />
                 </div>
-                <VoiceNoteSimulator
-                  title="Voice Note from Yash (2:43 AM)"
-                  time="2:18 min"
-                  transcript="Hey babu... you just fell asleep on FaceTime. I'm whispering so I don't wake you up, but you look so peaceful right now. Sleep well my angel. I love you so much."
+                {/* Yash's Real Voice Note Player (Part 1 & 2) */}
+                <RealVoiceNotePlayer
+                  title="Yash's Spoken Voice Note ♡"
+                  compact
                 />
                 <LoveMeter caption="How pretty Tannu looks when sleepy:" />
               </div>
@@ -2712,7 +2697,10 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
                 </P>
 
                 {/* Grand Finale: Cinematic Real Birthday Picture Reveal */}
-                <CinematicBirthdayReveal onOpenLetter={onOpenLetter} />
+                <CinematicBirthdayReveal
+                  onOpenLetter={onOpenLetter}
+                  onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
+                />
 
                 <ForeheadKissButton label="Send 100 Birthday Forehead Kisses 💋" />
               </div>
@@ -2785,6 +2773,15 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
           >
             <Film className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
             <span>Us, Unfiltered 🎞️</span>
+          </button>
+
+          <button
+            onClick={() => setIsVoiceModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/90 hover:bg-amber-200 border border-amber-300 shadow-xs text-amber-950 transition-all hover:scale-105 active:scale-95 cursor-pointer text-xs sm:text-sm font-bold"
+            title="Listen to Yash's Spoken Voice Message"
+          >
+            <Volume2 className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
+            <span>Yash's Voice 🎙️</span>
           </button>
 
           {showChapterMenu && (
@@ -2863,6 +2860,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
           <button onClick={handleCloseDiary} className="hover:text-rose-deep transition-colors cursor-pointer flex items-center gap-1 font-bold">
             <span>✖</span> Close Diary
           </button>
+          <button onClick={() => setIsVoiceModalOpen(true)} className="hover:text-rose-deep transition-colors cursor-pointer flex items-center gap-1 font-bold">
+            <span>🎙️</span> Yash's Voice (11 min)
+          </button>
           <button onClick={onOpenLetter} className="hover:text-rose-deep transition-colors cursor-pointer flex items-center gap-1 font-bold">
             <span>💌</span> Birthday Letter
           </button>
@@ -2870,6 +2870,9 @@ export const DiaryBook: React.FC<DiaryBookProps> = ({ onOpenLetter }) => {
 
         {/* Us Unfiltered Continuous Stories Modal */}
         <UnfilteredFilmModal isOpen={isFilmModalOpen} onClose={() => setIsFilmModalOpen(false)} />
+
+        {/* Yash's Spoken Voice Message Modal */}
+        <VoiceNoteModal isOpen={isVoiceModalOpen} onClose={() => setIsVoiceModalOpen(false)} />
       </div>
     </FlipContext.Provider>
   );

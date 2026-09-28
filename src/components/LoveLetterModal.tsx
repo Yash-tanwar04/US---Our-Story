@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, X, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { soundEngine } from '../utils/audio';
+import { RealVoiceNotePlayer } from './RealVoiceNotePlayer';
 
 interface LoveLetterModalProps {
   girlName?: string;
@@ -85,6 +86,19 @@ export const LoveLetterModal: React.FC<LoveLetterModalProps> = ({
             <div className="text-right pt-3 font-script text-3xl text-rose-deep">
               Forever yours,<br />
               Yash ♡
+            </div>
+
+            {/* Yash's Real Spoken Voice Note attached to the letter */}
+            <div className="mt-6 pt-4 border-t-2 border-dashed border-rose-300/60">
+              <div className="text-center mb-2">
+                <span className="inline-block px-3 py-1 rounded-full bg-rose-100 text-rose-deep font-handwriting text-sm font-bold shadow-2xs">
+                  🎙️ Yash's Spoken Voice Message (11 min)
+                </span>
+                <p className="font-handwriting text-sm text-ink-muted italic mt-1">
+                  "I couldn't write everything, so I recorded my voice from my heart in two parts for you ♡"
+                </p>
+              </div>
+              <RealVoiceNotePlayer title="Birthday Voice Note from Yash" />
             </div>
           </div>
         )}
